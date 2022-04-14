@@ -4,7 +4,7 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-from psf_packages.psf_generator import PSF_simulator
+from .psf_packages.psf_generator import PSF_simulator
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
 from qtpy.QtWidgets import QComboBox,QLabel, QFormLayout, QVBoxLayout, QSpinBox, QDoubleSpinBox, QCheckBox

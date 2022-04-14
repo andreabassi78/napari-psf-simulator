@@ -8,4 +8,4 @@ except ImportError:
 
 
 
-from ._widget import ExampleQWidget, example_magic_widget
+from ._widget import PSF_Widget

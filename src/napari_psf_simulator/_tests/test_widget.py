@@ -9,8 +9,6 @@ def test_psf_widget(make_napari_viewer, capsys):
     # create our widget, passing in the viewer
     my_widget = Psf_widget(viewer)
 
-    # call our widget method
-    my_widget.calculate_psf()
 
     
     

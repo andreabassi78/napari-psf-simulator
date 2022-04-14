@@ -4,8 +4,8 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-from psf_generator import PSF_simulator
-import napari
+from napari_psf_simulator.psf_generator import PSF_simulator
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
 from qtpy.QtWidgets import QComboBox,QLabel, QFormLayout, QVBoxLayout, QSpinBox, QDoubleSpinBox, QCheckBox
@@ -78,7 +78,7 @@ class Psf_widget(QWidget):
     
     ABERRATION_DICT = {0:'No aberrations', 1:'Slab aberrations', 2:'Zernike aberrations'}
     
-    def __init__(self, napari_viewer:napari.Viewer,
+    def __init__(self, napari_viewer,
                  ):
         self.viewer = napari_viewer
         super().__init__()
@@ -262,7 +262,7 @@ class Psf_widget(QWidget):
                      colormap='twilight') 
         
 # if __name__ == '__main__':
-   
+#     import napari
 #     viewer = napari.Viewer()
 #     widget = Psf_widget(viewer)
 #     viewer.window.add_dock_widget(widget,

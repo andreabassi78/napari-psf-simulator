@@ -8,4 +8,4 @@ except ImportError:
 
 
 
-from ._widget import PSF_Widget
+from ._widget import Psf_widget

@@ -5,7 +5,6 @@ Created on Sun Oct 11 10:20:28 2020
 @author: Andrea Bassi
 """
 import numpy as np
-from scipy.special import binom
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 

@@ -7,9 +7,63 @@ Created on Tue Feb 23 17:02:23 2021
 
 import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
-from .psf_packages.zernike_polynomials import nm_polynomial
-from .psf_packages.SIM_pupil import multiple_gaussians
 from warnings import warn
+
+def nm_normalization(n, m):
+    """the norm of the zernike mode n,m in born/wolf convetion
+    i.e. sqrt( \int | z_nm |^2 )
+    """
+    return np.sqrt((1.+(m==0))/(2.*n+2))
+
+def nm_polynomial(n, m, rho, theta, normalized=True):
+    from scipy.special import binom
+ 
+    """
+    returns the zernike polyonimal by classical n,m enumeration
+    if normed=True, then they form an orthonormal system
+        \int z_nm z_n'm' = delta_nn' delta_mm'
+        and the first modes are
+        z_nm(0,0)  = 1/sqrt(pi)*
+        z_nm(1,-1) = 1/sqrt(pi)* 2r cos(phi)
+        z_nm(1,1)  = 1/sqrt(pi)* 2r sin(phi)
+        z_nm(2,0)  = 1/sqrt(pi)* sqrt(3)(2 r^2 - 1)
+        ...
+        z_nm(4,0)  = 1/sqrt(pi)* sqrt(5)(6 r^4 - 6 r^2 +1)
+        ...
+    if normed =False, then they follow the Born/Wolf convention
+        (i.e. min/max is always -1/1)
+        \int z_nm z_n'm' = (1.+(m==0))/(2*n+2) delta_nn' delta_mm'
+        z_nm(0,0)  = 1
+        z_nm(1,-1) = r cos(phi)
+        z_nm(1,1)  =  r sin(phi)
+        z_nm(2,0)  = (2 r^2 - 1)
+        ...
+        z_nm(4,0)  = (6 r^4 - 6 r^2 +1)
+    Based on the code developed by Martin Weigert (https://github.com/maweigert)    
+    """
+    if abs(m) > n:
+        raise ValueError(" |m| <= n ! ( %s <= %s)" % (m, n))
+
+    if (n - m) % 2 == 1:
+        return 0 * rho + 0 * theta
+
+    radial = 0
+    m0 = abs(m)
+
+    for k in range((n - m0) // 2 + 1):
+        radial += (-1.) ** k * binom(n - k, k) * binom(n - 2 * k, (n - m0) // 2 - k) * rho ** (n - 2 * k)
+
+    radial = radial * (rho <= 1.) 
+
+    if normalized:
+        prefac = 1. / nm_normalization(n, m)
+    else:
+        prefac = 0.5
+    if m >= 0:
+        return prefac * radial * np.cos(m0 * theta)
+    else:
+        return prefac * radial * np.sin(m0 * theta)
+
 
 class PSF_simulator():
     '''
@@ -215,6 +269,7 @@ class PSF_simulator():
                 relative to the  cutoff frequency self.k_cut_off
             
             '''
+        from SIM_pupil import multiple_gaussians
 
         source_theta = list(2*np.pi/source_num * np.arange(source_num))
         source_kr = [kr] * source_num # list with NumSources elements
@@ -242,6 +297,7 @@ class PSF_simulator():
         If waist_x<<1 waist_ratio>>1, a light sheet is formed in the plane xz 
         
         '''
+        from SIM_pupil import multiple_gaussians
         waisty = waistx * waist_ratio
         beam= multiple_gaussians(self.kx/self.k_cut_off,
                                   self.ky/self.k_cut_off,
@@ -276,7 +332,7 @@ class PSF_simulator():
         waist_ratio: ratio between the waist along y and the one along x
         source_num: order of the lattice
         '''
-        
+        from SIM_pupil import multiple_gaussians
         source_rho = [(cutout+cutin)/2] * source_num # repeat list source_num times
         source_theta = 2*np.pi/source_num * np.arange(source_num)
         

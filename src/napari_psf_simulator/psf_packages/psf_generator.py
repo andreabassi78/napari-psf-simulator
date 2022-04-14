@@ -7,8 +7,8 @@ Created on Tue Feb 23 17:02:23 2021
 
 import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
-#from _zernike_polynomials import nm_polynomial
-#from _SIM_pupil import multiple_gaussians
+from psf_packages.zernike_polynomials import nm_polynomial
+from psf_packages.SIM_pupil import multiple_gaussians
 from warnings import warn
 
 class PSF_simulator():
@@ -489,7 +489,7 @@ class PSF_simulator():
         
         ax[1].plot( self.z, psf_to_show_z,
                    linewidth=1.5)
-        ax[1].set_xlabel('y ($\mu$m)')
+        ax[1].set_xlabel('z ($\mu$m)')
         # ax[1].set_ylabel('PSF')    
         ax[1].grid()
         DeltaZ = self.wavelength/self.n/(1-np.sqrt(1-self.NA**2/self.n**2)) # Diffraction limited axial resolution

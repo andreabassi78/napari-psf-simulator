@@ -5,7 +5,4 @@ except ImportError:
     __version__ = "unknown"
 
 
-
-
-
 from ._widget import Psf_widget

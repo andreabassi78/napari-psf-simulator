@@ -4,8 +4,7 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-from ._psf_generator import PSF_simulator
-
+from psf_packages.psf_generator import PSF_simulator
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
 from qtpy.QtWidgets import QComboBox,QLabel, QFormLayout, QVBoxLayout, QSpinBox, QDoubleSpinBox, QCheckBox
@@ -13,9 +12,9 @@ from napari.qt.threading import thread_worker
 import numpy as np
 
 
-class Settings():
+class Setting():
     ''' 
-    Auxilliary class to create an object with a corresponding Qwidget,
+    Auxilliary class to create an numerical attribute with a corresponding Qwidget,
     and update its value as a property (self.val)-
     - name of the QWidget (it contain a label)
     - dtype: Currently supported for int and float 
@@ -27,7 +26,7 @@ class Settings():
     
     '''
     
-    def __init__(self, name ='settings_name',
+    def __init__(self, name ='setting_name',
                  dtype = int,
                  initial_value = 0,
                  vmin = 0,
@@ -158,19 +157,18 @@ class Psf_widget(QWidget):
         
     def create_Settings(self, slayout, s_dict):
         for key, val in s_dict.items():
-            new_setting = Settings(name=key, dtype=type(val), initial_value=val,
+            new_setting = Setting(name=key, dtype=type(val), initial_value=val,
                                    layout=slayout,
                                    write_function=self.initialize_simulator)
             setattr(self, key, new_setting)          
     
     def initialize_simulator(self):
-        pass
-        # self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
-        #               self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
-        # self.gen.generate_kspace()
+        self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
+                      self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
+        self.gen.generate_kspace()
         
-        # active_aberration = self.aberration_combo.currentIndex()
-        # self.add_aberration(active_aberration)
+        active_aberration = self.aberration_combo.currentIndex()
+        self.add_aberration(active_aberration)
     
     def add_aberration(self, value):
         if value == 1:
@@ -240,7 +238,7 @@ class Psf_widget(QWidget):
        shapes_layer.add_ellipses(ellipses)  
        self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
        
-    def _show_PSF_projections(self): #unused 
+    def _show_PSF_projections(self): #not used 
         PSF = self.gen.PSF3D
         if self.mip_checkbox.checkState():
             # create maximum intensity projection

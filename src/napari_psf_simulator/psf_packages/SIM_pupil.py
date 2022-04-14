@@ -52,7 +52,7 @@ if __name__ == "__main__":
     n = 5  # Zernike radial order 
     m = 1 # Zernike azimutal frequency
     
-    Z = multiple_gaussians(X,Y, 0.1, 0.2, [0.5,1,0.5], [0, 2*np.pi/3, 4*np.pi/3], normalized = True) 
+    Z = multiple_gaussians(X,Y, 0.1, 0.2, [0.5,1,0.5], [1,1,1], [0, 2*np.pi/3, 4*np.pi/3], normalized = True) 
     
     fig1 = plt.figure(figsize=(9, 9))
     

@@ -7,11 +7,12 @@
 [![codecov](https://codecov.io/gh/andreabassi78/napari-psf-simulator/branch/main/graph/badge.svg)](https://codecov.io/gh/andreabassi78/napari-psf-simulator)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-psf-simulator)](https://napari-hub.org/plugins/napari-psf-simulator)
 
-A plugin for the simulation of the 3D Point Spread Function of an optical systen, particularly a microscope objective. 
-Calculates the PSF as the squared Fourier Transform of the pupil and propagates the angular spectrum to simulate the PSF in 3D.  
-The following aberrations are now included:
-- phase aberration described by a Zernike polynomials with nm coefficients
-- aberration induced by a slab placed with a refractive index different from the one at the object (only scalar approximation, polarization in not considered yet)  
+A plugin for the simulation of the 3D Point Spread Function of an optical systen, particularly a microscope objective.
+ 
+Calculates the PSF as the squared Fourier Transform of the pupil and uses the angular spectrum to propagate the PSF in 3D.  
+The following aberrations are included:
+- phase aberration described by a Zernike polynomials with n-m coefficients
+- aberration induced by a slab, with a refractive index different from the one at the object (only scalar approximation is used, polarization not considered yet).  
 
 ----------------------------------
 

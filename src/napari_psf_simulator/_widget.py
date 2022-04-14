@@ -4,7 +4,7 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-from napari_psf_simulator.psf_generator import PSF_simulator
+#from psf_generator import PSF_simulator
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
@@ -164,12 +164,13 @@ class Psf_widget(QWidget):
             setattr(self, key, new_setting)          
     
     def initialize_simulator(self):
-        self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
-                      self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
-        self.gen.generate_kspace()
+        pass
+        # self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
+        #               self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
+        # self.gen.generate_kspace()
         
-        active_aberration = self.aberration_combo.currentIndex()
-        self.add_aberration(active_aberration)
+        # active_aberration = self.aberration_combo.currentIndex()
+        # self.add_aberration(active_aberration)
     
     def add_aberration(self, value):
         if value == 1:

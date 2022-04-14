@@ -7,8 +7,8 @@ Created on Tue Feb 23 17:02:23 2021
 
 import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
-from zernike_polynomials import nm_polynomial
-from SIM_pupil import multiple_gaussians
+from .zernike_polynomials import nm_polynomial
+from .SIM_pupil import multiple_gaussians
 from warnings import warn
 
 class PSF_simulator():

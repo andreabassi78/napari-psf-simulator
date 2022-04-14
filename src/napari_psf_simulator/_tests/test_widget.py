@@ -10,9 +10,7 @@ def test_psf_widget(make_napari_viewer, capsys):
     my_widget = Psf_widget(viewer)
 
     # call our widget method
-    #my_widget.calculate_psf()
+    my_widget.calculate_psf()
 
-    # read captured output and check that it's as we expected
-    #captured = capsys.readouterr()
-    #assert captured.out == "napari has 1 layers\n"
+    
     

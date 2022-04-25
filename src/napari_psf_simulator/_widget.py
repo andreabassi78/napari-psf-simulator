@@ -123,7 +123,6 @@ class Psf_widget(QWidget):
         def find_decimals_num(s):
             return len(str(s).split(".")[1])
             
-        
         for key, val in s_dict.items():
             name_unit = key.split(" [")
             name = name_unit[0]

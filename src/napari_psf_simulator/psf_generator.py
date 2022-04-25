@@ -491,6 +491,7 @@ class PSF_simulator():
             axs[idx].set_ylabel(f'{labels[1]} ($\mu$m)')
             axs[idx].set_title(f'|PSF({labels[0]},{labels[1]})|')  
             
+            
             if labels[1] == 'z': 
                 axs[idx].set_aspect(1/aspect_ratio)
         
@@ -520,11 +521,12 @@ class PSF_simulator():
         plot the phase a the pupil along x and y
         '''
         import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=False, dpi=dpi)
+        fig, ax = plt.subplots(1, 2, figsize=(8, 4), tight_layout=False, dpi=dpi)
+        char_size = 12
         sup_title =  f'NA = {self.NA}, n = {self.n}'
         if hasattr(self,'thickness'):
              sup_title += f', slab thickness = {self.thickness} $\mu$m, n1 = {self.n1}, alpha = {self.alpha:.02f}'
-        fig.suptitle(sup_title)
+        fig.suptitle(sup_title, size=char_size*0.8)
         PSF = self.PSF3D
         Nz, Ny, Nx = PSF.shape
     
@@ -534,8 +536,8 @@ class PSF_simulator():
         
         ax[0].plot( self.x, psf_to_show_x,
                    linewidth=1.5)
-        ax[0].set_xlabel('x ($\mu$m)')
-        ax[0].set_ylabel('PSF')
+        ax[0].set_xlabel('x ($\mu$m)',size=char_size)
+        ax[0].set_ylabel('PSF', size=char_size)
         ax[0].grid()
         DeltaX = self.wavelength/self.NA/2 # Abbe resolution
         ax[0].plot(np.array([0.,DeltaX,1.22*DeltaX]),
@@ -545,11 +547,16 @@ class PSF_simulator():
         
         ax[1].plot( self.z, psf_to_show_z,
                    linewidth=1.5)
-        ax[1].set_xlabel('z ($\mu$m)')
+        ax[1].set_xlabel('z ($\mu$m)', size=char_size)
         # ax[1].set_ylabel('PSF')    
         ax[1].grid()
         DeltaZ = self.wavelength/self.n/(1-np.sqrt(1-self.NA**2/self.n**2)) # Diffraction limited axial resolution
         ax[1].plot(DeltaZ, 0., 'o', markersize=2)
+        
+        for idx in (0,1):
+            ax[idx].xaxis.set_tick_params(labelsize=char_size*0.5)
+            ax[idx].yaxis.set_tick_params(labelsize=char_size*0.5)
+        
         plt.show()
         
     def save_data(self):

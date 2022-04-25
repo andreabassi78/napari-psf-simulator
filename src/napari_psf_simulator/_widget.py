@@ -4,76 +4,23 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-from .psf_generator import PSF_simulator
+from psf_generator import PSF_simulator
+from gui_utils import Setting
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
-from qtpy.QtWidgets import QComboBox,QLabel, QFormLayout, QVBoxLayout, QSpinBox, QDoubleSpinBox, QCheckBox
+from qtpy.QtWidgets import QComboBox,QLabel, QVBoxLayout, QCheckBox
 from napari.qt.threading import thread_worker
 import numpy as np
-
-
-class Setting():
-    ''' 
-    Auxilliary class to create an numerical attribute with a corresponding Qwidget,
-    and update its value as a property (self.val)-
-    - name of the QWidget (it contain a label)
-    - dtype: Currently supported for int and float 
-    - initial_value: stored in the @property self.val
-    - vmin, vmax: min and max values of the QWidget
-    - layout: parent Qlayout    
-    - read function: not implemented
-    - write_function is executed on value change of the QWidget
+ 
+class Psf_widget(QWidget):
     
     '''
-    
-    def __init__(self, name ='setting_name',
-                 dtype = int,
-                 initial_value = 0,
-                 vmin = 0,
-                 vmax = 2**16-1,
-                 layout = None,
-                 write_function = None,
-                 read_function = None):
-        
-        self.name= name
-        self._val = initial_value
-        self.write_function = write_function
-        self.read_function = read_function
-        self.create_spin_box(layout, dtype, vmin, vmax)
-        
-    @property    
-    def val(self):
-        self._val = self.sbox.value()
-        return self._val 
-    
-    @val.setter 
-    def val(self, new_val):
-        self.sbox.setValue(new_val)
-        self._val = new_val
-        
-    def create_spin_box(self, layout, dtype, vmin, vmax):
-        name = self.name
-        val = self._val
-        if dtype == int:
-            sbox = QSpinBox()
-            sbox.setMaximum(vmax)
-            sbox.setMinimum(vmin)
-        elif dtype == float:
-            sbox = QDoubleSpinBox()
-            sbox.setDecimals(3)
-            sbox.setSingleStep(0.1)
-            sbox.setMaximum(2**16-1)
-        
-        else: raise(TypeError, 'Specified setting type not supported')
-        sbox.setValue(val)
-        if self.write_function is not None:
-            sbox.valueChanged.connect(self.write_function)
-        settingLayout = QFormLayout()
-        settingLayout.addRow(QLabel(name), sbox)
-        layout.addLayout(settingLayout)
-        self.sbox = sbox
-        
-class Psf_widget(QWidget):
+    Napari widget to simulate the point spread function of an imaging system,
+    particularly an optical microscope.
+    Aberrations currently included are:
+        -Zernike phase aberration
+        -presence of a layer with different refractive index than the sample 
+    '''
     
     ABERRATION_DICT = {0:'No aberrations', 1:'Slab aberrations', 2:'Zernike aberrations'}
     
@@ -81,29 +28,32 @@ class Psf_widget(QWidget):
                  ):
         self.viewer = napari_viewer
         super().__init__()
-        
-        self.settings_dict = {'NA':float(0.5),
-                         'n':float(1.00),
-                         'wavelength':float(0.5320),
-                         'Nxy':int(127),
-                         'Nz':int(63),
-                         'dxy':float(0.10),
-                         'dz':float(0.2)
-                         }
-        self.slab_aberrations_dict = {'n1':float(1.51),
-                                      'thickness':float(100.0),
-                                      'alpha':float(0.0),
+      
+        self.settings_dict = {'NA': 0.65,
+                             'n': 1.33,
+                             'wavelength [\u03BCm]': 0.532,
+                             'Nxy':127,
+                             'Nz':63,
+                             'dxy [\u03BCm]':0.05,
+                             'dz [\u03BCm]':0.15
+                             }
+        self.slab_aberrations_dict = {'n1':1.51,
+                                      'thickness [\u03BCm]':100.0,
+                                      'alpha [deg]':0.0,
                                       }
-                
-        self.zernike_aberrations_dict = {'N':int(3),
-                                         'M':int(1),
-                                         'weight':float(1.0)
+        self.zernike_aberrations_dict = {'N':3,
+                                         'M':1,
+                                         'weight [\u03BB]':1.0
                                          }
                 
         self.setup_ui() 
         self.initialize_simulator()
     
-    def setup_ui(self):     
+    def setup_ui(self): 
+        """
+        Creates the user interface. 
+        Note that the magicgui is not used and the Setting class (gui_utils.Setting)  
+        """
         
         def add_section(_layout,_title):
             splitter = QSplitter(Qt.Vertical)
@@ -118,7 +68,7 @@ class Psf_widget(QWidget):
         add_section(layout,'Settings')
         settings_layout = QVBoxLayout()
         layout.addLayout(settings_layout)
-        self.create_Settings(settings_layout, self.settings_dict)
+        self.create_Settings(self.settings_dict, settings_layout)
         
         # add plot results checkbox
         self.plot_checkbox = QCheckBox("Plot PSF profile in Console")
@@ -144,25 +94,55 @@ class Psf_widget(QWidget):
         add_section(layout,'Slab aberrations')
         slab_layout = QVBoxLayout()
         layout.addLayout(slab_layout)
-        self.create_Settings(slab_layout, self.slab_aberrations_dict)
+        self.create_Settings(self.slab_aberrations_dict, slab_layout)
         
         # Zernike aberrations
         add_section(layout,'Zernike aberrations')
         aberration_layout = QVBoxLayout()
         layout.addLayout(aberration_layout)
-        self.create_Settings(aberration_layout, self.zernike_aberrations_dict) 
+        self.create_Settings(self.zernike_aberrations_dict, aberration_layout) 
         
-        # Other aberrations ....
-        add_section(layout,'')
+        # Other aberrations .... to be implemented
+        # add_section(layout,'other aberrtion')
         
-    def create_Settings(self, slayout, s_dict):
+    def create_Settings(self,  s_dict,  layout):
+        """
+        Adds the settings whose name and value is specified in a dictionary to a layout        
+
+        Parameters
+        ----------
+        s_dict : dict
+            Dictonary containing the settings name and initial value that will be displayed
+        layout : Qwidget
+            Layout (Qwidget) where the settings will be created
+
+        """
+        def find_between(s, start, end):
+            return (s.split(start))[1].split(end)[0]
+            
+        def find_decimals_num(s):
+            return len(str(s).split(".")[1])
+            
+        
         for key, val in s_dict.items():
-            new_setting = Setting(name=key, dtype=type(val), initial_value=val,
-                                   layout=slayout,
-                                   write_function=self.initialize_simulator)
-            setattr(self, key, new_setting)          
+            name_unit = key.split(" [")
+            name = name_unit[0]
+            unit = '' if len(name_unit)==1 else find_between(key, '[', ']')
+            decimals = find_decimals_num(val) if type(val)==float else 0
+            
+            new_setting = Setting(name=name, dtype=type(val), initial=val, 
+                                  spinbox_decimals=decimals, spinbox_step= 0.1,
+                                  unit = unit,
+                                  layout=layout,
+                                  write_function=self.initialize_simulator)
+            setattr(self, name, new_setting)          
     
     def initialize_simulator(self):
+        '''
+        Starts the simulator defining the space in the spatial frequency domain.
+        Creates the systems' pupil (self.gen.amplitude and self.gen.phase).
+        Sets the current aberration type.
+        '''
         self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
                       self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
         self.gen.generate_kspace()
@@ -171,13 +151,19 @@ class Psf_widget(QWidget):
         self.add_aberration(active_aberration)
     
     def add_aberration(self, value):
+        '''
+        Adds a phase aberration to the pupil (adding a phase term to self.gen.phase)
+        '''
+        
         if value == 1:
             self.gen.add_slab_scalar(self.n1.val, self.thickness.val, self.alpha.val)
         if value == 2:
             self.gen.add_Zernike_aberration(self.N.val, self.M.val, self.weight.val)
     
     def calculate_psf(self):
-        
+        '''
+        Calculates the 3D PSF and shows it as a stack
+        '''
         @thread_worker
         def generator():
             import warnings
@@ -203,6 +189,9 @@ class Psf_widget(QWidget):
         worker.start()  # start the thread
         
     def show_airy_disk(self):
+       '''
+       Shows the diffraction limited Airy disk as 3 perpendicular ellipses 
+       '''
        deltaR = 1.22*self.wavelength.val/self.NA.val/2 # Rayleigh resolution
        deltaZ = self.wavelength.val/self.n.val/(1-np.sqrt(1-self.NA.val**2/self.n.val**2)) # Diffraction limited axial resolution
        posxy = self.Nxy.val//2
@@ -238,7 +227,11 @@ class Psf_widget(QWidget):
        shapes_layer.add_ellipses(ellipses)  
        self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
        
-    def _show_PSF_projections(self): #not used 
+    def _show_PSF_projections(self): 
+        '''
+        Create 2D profiles as new layers.
+        Not used
+        '''
         PSF = self.gen.PSF3D
         if self.mip_checkbox.checkState():
             # create maximum intensity projection

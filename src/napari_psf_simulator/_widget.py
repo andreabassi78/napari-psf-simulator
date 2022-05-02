@@ -31,7 +31,7 @@ class Psf_widget(QWidget):
       
         self.settings_dict = {'NA': 0.65,
                              'n': 1.33,
-                             'wavelength [\u03BCm]': 0.532,
+                             'wavelength [\u03BCm]': 0.53,
                              'Nxy':127,
                              'Nz':63,
                              'dxy [\u03BCm]':0.05,
@@ -107,7 +107,8 @@ class Psf_widget(QWidget):
         
     def create_Settings(self,  s_dict,  layout):
         """
-        Adds the settings whose name and value is specified in a dictionary to a layout        
+        Adds the settings whose name and value is specified in a dictionary,
+        to the passed layout
 
         Parameters
         ----------

@@ -6,11 +6,10 @@ Created on Mon Apr 25 15:24:39 2022
 """
 from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox
 
-from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox
-
 class Setting():
     '''
-    Auxiliary class to create an numerical or boolean attribute with a corresponding Qwidget,
+    Auxiliary class to create an numerical or boolean attribute 
+    with a corresponding Qwidget (QSpinBox, QDoubleSpinBox or QCheckBox),
     and update its value as a property (self.val). 
     '''
     
@@ -21,6 +20,7 @@ class Setting():
                  vmax = 2**16-1,
                  spinbox_decimals=3,
                  spinbox_step=0.05,
+                 width = 150,
                  unit = '',
                  layout = None,
                  write_function = None,
@@ -42,6 +42,8 @@ class Setting():
             For objects with dtype==float, it is the number of decimals to show in the DoubleSpinBox. The default is 3.
         spinbox_step : float
             For objects with dtype==float, it is the step of the DoubleSpinBox. The default is 0.05.
+        width : int
+            Width of the spinbox. The default is 150.
         unit : str
             Unit of measurement of the Setting. The default is ''.
         layout : QWidget
@@ -60,7 +62,7 @@ class Setting():
         self.unit = unit
         self.write_function = write_function
         # self.read_function = read_function
-        self.create_spin_box(layout, dtype, vmin, vmax,unit)
+        self.create_spin_box(layout, dtype, vmin, vmax, unit, width)
         
     def __repr__(self):
         return f'{self.name} : {self._val}'
@@ -76,7 +78,7 @@ class Setting():
         self.set_func(new_val)
         self._val = new_val
         
-    def create_spin_box(self, layout, dtype, vmin, vmax, unit):
+    def create_spin_box(self, layout, dtype, vmin, vmax, unit, width):
         name = self.name
         val = self._val
         if dtype == int:
@@ -104,13 +106,13 @@ class Setting():
             change_func = sbox.stateChanged
         
         else: raise(TypeError, 'Specified setting type not supported')
-        
+        sbox.setFixedWidth(width)
         self.set_func(val)
         if self.write_function is not None:
             change_func.connect(self.write_function)
         settingLayout = QFormLayout()
         lab = QLabel(name)
         lab.setWordWrap(False)
-        settingLayout.addRow(lab,sbox)
+        settingLayout.addRow(sbox,lab)
         layout.addLayout(settingLayout)
         self.sbox = sbox  

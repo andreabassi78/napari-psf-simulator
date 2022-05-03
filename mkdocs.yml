@@ -1,5 +1,5 @@
 site_name: napari-psf-simulator
-site_description: A plugin for PSF simulation with aberrations
+site_description: A plugin for simulations of the Point Spread Function, with aberrations
 site_author: Andrea Bassi
 
 theme: readthedocs

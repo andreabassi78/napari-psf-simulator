@@ -4,8 +4,8 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-from napari_sim_processor.psf_generator import PSF_simulator
-from napari_sim_processor.gui_utils import Setting
+from .psf_generator import PSF_simulator
+from .gui_utils import Setting
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
 from qtpy.QtWidgets import QComboBox,QLabel, QVBoxLayout, QCheckBox
@@ -13,7 +13,6 @@ from napari.qt.threading import thread_worker
 import numpy as np
  
 class Psf_widget(QWidget):
-    
     '''
     Napari widget to simulate the point spread function of an imaging system,
     particularly an optical microscope.

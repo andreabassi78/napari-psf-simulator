@@ -1,4 +1,5 @@
 from napari_psf_simulator import Psf_widget
+from napari.layers import Image
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
 # capsys is a pytest fixture that captures stdout and stderr output streams
@@ -8,6 +9,8 @@ def test_psf_widget(make_napari_viewer, capsys):
     
     # create our widget, passing in the viewer
     my_widget = Psf_widget(viewer)
+    my_widget.calculate_psf()
+    assert isinstance(viewer.layers[0], Image)
 
 
     

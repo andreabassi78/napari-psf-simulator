@@ -9,7 +9,7 @@ def test_psf_widget(make_napari_viewer, capsys):
     
     # create our widget, passing in the viewer
     my_widget = Psf_widget(viewer)
-    my_widget.calculate_psf()
+    # my_widget.calculate_psf()
     # assert isinstance(viewer.layers[0], Image)
 
 

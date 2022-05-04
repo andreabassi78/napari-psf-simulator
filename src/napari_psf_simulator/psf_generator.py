@@ -9,7 +9,7 @@ import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
 from warnings import warn
 from .zernike_polynomials import nm_normalization, nm_polynomial 
-# from .sim_pupil import multiple_gaussians
+#from .sim_pupil import multiple_gaussians
 
 class PSF_simulator():
     '''

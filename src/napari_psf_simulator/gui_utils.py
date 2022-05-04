@@ -5,6 +5,7 @@ Created on Mon Apr 25 15:24:39 2022
 @author: Andrea Bassi
 """
 from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox
+from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox
 
 class Setting():
     '''
@@ -89,6 +90,7 @@ class Setting():
             self.get_func = sbox.value
             sbox.setSuffix(unit)
             change_func = sbox.valueChanged
+            sbox.setFixedWidth(width)
         elif dtype == float:
             sbox = QDoubleSpinBox()
             sbox.setDecimals(self.spinbox_decimals)
@@ -99,6 +101,7 @@ class Setting():
             self.set_func = sbox.setValue
             self.get_func = sbox.value
             change_func = sbox.valueChanged
+            sbox.setFixedWidth(width)
         elif dtype == bool:
             sbox = QCheckBox()
             self.set_func = sbox.setChecked
@@ -106,7 +109,7 @@ class Setting():
             change_func = sbox.stateChanged
         
         else: raise(TypeError, 'Specified setting type not supported')
-        sbox.setFixedWidth(width)
+        
         self.set_func(val)
         if self.write_function is not None:
             change_func.connect(self.write_function)
@@ -116,3 +119,4 @@ class Setting():
         settingLayout.addRow(sbox,lab)
         layout.addLayout(settingLayout)
         self.sbox = sbox  
+

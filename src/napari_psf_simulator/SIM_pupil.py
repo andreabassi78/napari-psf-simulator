@@ -5,9 +5,6 @@ Created on Sun Oct 11 10:20:28 2020
 @author: Andrea Bassi
 """
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-
 
 def gaussian_kernel(X,Y, Wx, Wy, X0=0, Y0=0):
     """ creates a 3D gaussian kernel 
@@ -40,7 +37,8 @@ def multiple_gaussians(x, y, waistx, waisty, rhos, amps, thetas, normalized = Tr
         
 
 if __name__ == "__main__": 
-
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
     Npixels = 512 # number of pixels
     R = 1 # extent of the xy space
     x = y = np.linspace(-R, +R, Npixels)

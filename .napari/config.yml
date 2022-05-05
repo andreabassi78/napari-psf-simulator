@@ -1,0 +1,10 @@
+
+# Add labels from the EDAM Bioimaging ontology
+labels:
+  ontology: EDAM-BIOIMAGING:alpha06
+  terms:
+  - Resolution enhancement
+  - 3D image
+  - Fluorescence microscopy
+  - Structured Illumination microscopy
+  - Image processing

@@ -40,7 +40,7 @@ To install latest development version :
 
 ## Usage
 
-1) Lauch the plugin and select the parameters of the microscope: '(NA)' (numerical aperture), '(wavelenght)', '(n)' (refractive index at the object),
+1) Lauch the plugin and select the parameters of the microscope: `(NA)` (numerical aperture), '(wavelenght)', '(n)' (refractive index at the object),
    '(Nxy)' (number of pixels), '(Nz)' (number of slices), '(dxy)' (transverse sampling), '(dz)' (axial sampling)
 
 2) Select an aberration type (if needed) and press '(Calculate PSF)' to run the simulator. This will create a new image layer with the 3D PSF.

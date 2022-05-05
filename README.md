@@ -47,16 +47,16 @@ To install latest development version :
  
    The option `Show Airy disk` creates 3 ellipses as a shapes layer, showing the boundaries of the diffraction limited blob.
 
-![raw](https://github.com/andreabassi78/napari-psf-simulator/blob/main/images/figure.png)
+![raw](https://github.com/andreabassi78/napari-psf-simulator/raw/main/images/figure.png)
 **Napari viewer with the psf-simulator widget showing the in-focus plane of an aberrated PSF**
 
-![raw](https://github.com/andreabassi78/napari-psf-simulator/blob/main/images/animation.gif)
+![raw](https://github.com/andreabassi78/napari-psf-simulator/raw/main/images/animation.gif)
 **Slicing through a PSF aberrated with Zernike polynomials of order N=3, M=1 (coma)**
 
 3) Click on the `Plot PSF Profile in Console` checkbox to see the x and z profiles of the PSF.
    They will show up in  the viewer console when `Calculate PSF` is executed.
 
-![raw](https://github.com/andreabassi78/napari-psf-simulator/blob/main/images/Plot.png)
+![raw](https://github.com/andreabassi78/napari-psf-simulator/raw/main/images/Plot.png)
 **Plot profile of the PSF, shown in the Console**
 
 

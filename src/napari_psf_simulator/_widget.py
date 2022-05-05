@@ -259,4 +259,4 @@ if __name__ == '__main__':
     viewer.window.add_dock_widget(widget,
                                   name = 'PSF Simulator @Polimi',
                                   add_vertical_stretch = True)
-    napari.run()      
+    napari.run()   

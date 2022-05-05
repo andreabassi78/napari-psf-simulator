@@ -9,7 +9,7 @@ import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
 from warnings import warn
 from .zernike_polynomials import nm_normalization, nm_polynomial 
-#from .sim_pupil import multiple_gaussians
+
 
 class PSF_simulator():
     '''
@@ -215,7 +215,7 @@ class PSF_simulator():
                 relative to the  cutoff frequency self.k_cut_off
             
             '''
-        
+        from .sim_pupil import multiple_gaussians
 
         source_theta = list(2*np.pi/source_num * np.arange(source_num))
         source_kr = [kr] * source_num # list with NumSources elements
@@ -243,7 +243,7 @@ class PSF_simulator():
         If waist_x<<1 waist_ratio>>1, a light sheet is formed in the plane xz 
         
         '''
-        
+        from .sim_pupil import multiple_gaussians
         waisty = waistx * waist_ratio
         beam= multiple_gaussians(self.kx/self.k_cut_off,
                                   self.ky/self.k_cut_off,
@@ -278,6 +278,7 @@ class PSF_simulator():
         waist_ratio: ratio between the waist along y and the one along x
         source_num: order of the lattice
         '''
+        from .sim_pupil import multiple_gaussians
         source_rho = [(cutout+cutin)/2] * source_num # repeat list source_num times
         source_theta = 2*np.pi/source_num * np.arange(source_num)
         

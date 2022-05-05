@@ -33,10 +33,31 @@ You can install `napari-psf-simulator` via [pip]:
     pip install napari-psf-simulator
 
 
-
 To install latest development version :
 
     pip install git+https://github.com/andreabassi78/napari-psf-simulator.git
+
+
+## Usage
+
+1) Lauch the pluginand select the parameters of the microscope:
+NA (numerical aperture), wavelenght, n (refractive index at the object)
+Nxy (number of pixels), Nz (number of slices), dxy (transverse sampling), dz (axial sampling)
+
+2) Select an aberration type (if needed) and press "Calculate PSF" to run the simulator. This will create a new image layer with the 3D PSF. 
+   The option "Show Airy disk" creates 3 ellipses as a shapes layer, showing the boundaries of the diffraction limited blob.
+
+![raw](https://github.com/andreabassi78/napari-psf-simulator/blob/main/images/figure.png)
+**Napari viewer with the psf-simulator widget showing the in-focus plane of an aberrated PSF**
+
+![raw](https://github.com/andreabassi78/napari-psf-simulator/blob/main/images/animation.gif)
+**Slicing thrugh a PSF aberrated with Zernike polynomials, order N=3, M=1 (coma)**
+
+3) Click on the "Plot PSF Profile in Console" checkbox to see the xy and xz profiles of the PSF.
+   This will show up in  the viewer console when "Calculate PSF" is executed.
+
+![raw](https://github.com/andreabassi78/napari-psf-simulator/blob/main/images/Plot.png)
+**Plot profile of the PSF, shown in the Console**
 
 
 ## Contributing

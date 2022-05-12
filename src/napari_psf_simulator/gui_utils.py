@@ -5,7 +5,7 @@ Created on Mon Apr 25 15:24:39 2022
 @author: Andrea Bassi
 """
 from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox
-from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox
+from qtpy.QtCore import Qt
 
 class Setting():
     '''
@@ -114,6 +114,7 @@ class Setting():
         if self.write_function is not None:
             change_func.connect(self.write_function)
         settingLayout = QFormLayout()
+        settingLayout.setFormAlignment(Qt.AlignLeft)
         lab = QLabel(name)
         lab.setWordWrap(False)
         settingLayout.addRow(sbox,lab)

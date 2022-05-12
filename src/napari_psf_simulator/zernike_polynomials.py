@@ -3,7 +3,8 @@
 Created on Sun Oct 11 10:20:28 2020
 
 Defines a function to create Zernike Polynomials.
-Based on the code developed by Martin Weigert (https://github.com/maweigert)
+Based on the code developed by Martin Weigert: 
+https://github.com/mpicbg-csbd/phasenet
 
 @author: Andrea Bassi
 """

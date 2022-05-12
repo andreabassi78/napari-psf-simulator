@@ -145,7 +145,6 @@ class Psf_widget(QWidget):
         self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
                       self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
         self.gen.generate_kspace()
-        
         active_aberration = self.aberration_combo.currentIndex()
         self.add_aberration(active_aberration)
     
@@ -158,6 +157,15 @@ class Psf_widget(QWidget):
             self.gen.add_slab_scalar(self.n1.val, self.thickness.val, self.alpha.val)
         if value == 2:
             self.gen.add_Zernike_aberration(self.N.val, self.M.val, self.weight.val)
+    
+    
+    def rescaleZ(self, layer):
+        zscaling = self.dz.val / self.dxy.val
+        if layer.ndim >=3:
+            scale = layer.scale 
+            scale[-3] = zscaling
+            layer.scale = scale
+            
     
     def calculate_psf(self):
         '''
@@ -172,17 +180,23 @@ class Psf_widget(QWidget):
             return self.gen.PSF3D
         
         def update_image(psf):
-            
-            self.viewer.add_image(psf,
+            self.viewer.dims.current_step = (0,0,0)
+            psf_layer = self.viewer.add_image(psf,
                              name=self.gen.write_name(basename = 'stack'),
                              colormap='twilight')
+            self.rescaleZ(psf_layer)
             
             if self.airy_checkbox.checkState():
-                self.show_airy_disk()
+               self.show_airy_disk()
+                
             
             if self.plot_checkbox.checkState():
-                self.gen.plot_psf_profile()  
-        
+                self.gen.plot_psf_profile()
+                
+            posxy = self.Nxy.val // 2
+            posz = self.Nz.val // 2
+            self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
+            
         worker = generator()  # create "worker" object
         worker.returned.connect(update_image)  # connect callback functions
         worker.start()  # start the thread
@@ -224,7 +238,8 @@ class Psf_widget(QWidget):
                                               face_color = [1,1,1,0],
                                               edge_color = 'red')
        shapes_layer.add_ellipses(ellipses)  
-       self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
+       self.rescaleZ(shapes_layer)
+       return(shapes_layer)
        
     def _show_PSF_projections(self): 
         '''

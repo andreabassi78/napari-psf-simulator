@@ -10,7 +10,6 @@ from numpy.fft import fft2, ifftshift, fftshift, fftfreq
 from warnings import warn
 from .zernike_polynomials import nm_normalization, nm_polynomial 
 
-
 class PSF_simulator():
     '''
     Class to generate 3D Point Spread Functions
@@ -552,10 +551,10 @@ if __name__ == '__main__':
     mm = 1000 * um
     deg = np.pi/180
     
-    NA = 0.5
+    NA = 0.57
     
     wavelength = 0.532 * um 
-    n0 = 1. # refractive index of the medium
+    n0 = 1.33 # refractive index of the medium
     
     n1 = 1.47 # refractive index of the slab
     thickness = 50 * um # slab thickness
@@ -563,9 +562,9 @@ if __name__ == '__main__':
     
     SaveData = False
     
-    Nxy = 128
+    Nxy = 127
     
-    Nz = 4
+    Nz = 63
      
     dr = 0.1 * um
     
@@ -575,10 +574,10 @@ if __name__ == '__main__':
                         dr = dr, dz = dz
                         )
     
-    gen.add_Ndimensional_SIM_pupil(kr = 0.5,
-                                    waist = 0.02,
-                                    source_num = 3,
-                                    add_cw = True)
+    # gen.add_Ndimensional_SIM_pupil(kr = 0.5,
+    #                                 waist = 0.02,
+    #                                 source_num = 3,
+    #                                 add_cw = True)
     
     # gen.add_lattice_pupil()
     # gen.add_lightsheet_pupil()

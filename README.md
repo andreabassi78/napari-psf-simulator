@@ -64,8 +64,8 @@ To install latest development version :
 
 Contributions are very welcome. Tests can be run with [tox], please ensure
 the coverage at least stays the same before you submit a pull request. 
-The plugin has been concived to be modular allowing the insertion of new aberations and pupils. 
-Any suggestions or contributions on this are welcome.
+The plugin has been concived to be modular allowing the insertion of new aberations and pupils. Please contact the developers on github for adding new propagations and aberrations types. 
+Any suggestions or contributions are welcome.
 
 ## License
 

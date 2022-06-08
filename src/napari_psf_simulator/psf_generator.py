@@ -13,7 +13,7 @@ from .zernike_polynomials import nm_normalization, nm_polynomial
 class PSF_simulator():
     '''
     Class to generate 3D Point Spread Functions
-    with different pupils and various abberrations between the object and the lens. 
+    with different pupils and various abberrations. 
     '''
     
     def __init__(self, NA=0.5, n=1, wavelength=0.532, Nxy=127, Nz=3, **kwargs):
@@ -57,6 +57,11 @@ class PSF_simulator():
 
         self.generate_kspace()
         
+    def re_init(self,*args,**kwargs):
+        """
+        reinitializes the attributes of the PSFsimulator object wihout creating a new instance (__new__ is not executed)
+        """
+        self.__init__(*args,**kwargs)
         
     def generate_kspace(self):
         """
@@ -180,7 +185,7 @@ class PSF_simulator():
         self.phase += 2*np.pi * (self.kx)**2 /2/f_cyl * f
         
         
-    def add_Zernike_aberration(self, N, M, weight):#TODO use correct weight
+    def add_Zernike_aberration(self, N, M, weight):
         # weight of the polynomials in units of lambda (weight 1 means  wavefront abberated of lamba/2)
         self.N = N
         self.M = M
@@ -477,6 +482,7 @@ class PSF_simulator():
     
         # psf_to_show = PSF.take(indices=Nlist[idx]//2 , axis=idx)
         psf_to_show_x = PSF[Nz//2,Ny//2,:]
+        
         psf_to_show_z = PSF[:,Ny//2,Nx//2]
         
         ax[0].plot( self.x, psf_to_show_x,
@@ -551,7 +557,7 @@ if __name__ == '__main__':
     mm = 1000 * um
     deg = np.pi/180
     
-    NA = 0.57
+    NA = 1.15
     
     wavelength = 0.532 * um 
     n0 = 1.33 # refractive index of the medium

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Apr 25 15:24:39 2022
+Created on Tue Jan 25 16:34:41 2022
 
-@author: Andrea Bassi
+@author: Andrea Bassi @ Polimi
 """
-from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox
+from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox
 from qtpy.QtCore import Qt
+from enum import Enum, EnumMeta
 
 class Setting():
     '''
@@ -19,7 +20,7 @@ class Setting():
                  initial = 0,
                  vmin = 0,
                  vmax = 2**16-1,
-                 spinbox_decimals=3,
+                 spinbox_decimals=2,
                  spinbox_step=0.05,
                  width = 150,
                  unit = '',
@@ -48,7 +49,7 @@ class Setting():
         unit : str
             Unit of measurement of the Setting. The default is ''.
         layout : QWidget
-            Parent QWidget layout where the Setting will be shown. The default is None.
+            Parent QWidget layout where the Setting will be shown. The default is None. Needs to be specified
         write_function : function or method
             Function/method that is executed on value change of the QWidget
         read_function : function or method
@@ -108,7 +109,7 @@ class Setting():
             self.get_func = sbox.checkState
             change_func = sbox.stateChanged
         
-        else: raise(TypeError, 'Specified setting type not supported')
+        else: raise(TypeError('Specified setting type not supported'))
         
         self.set_func(val)
         if self.write_function is not None:
@@ -119,5 +120,129 @@ class Setting():
         lab.setWordWrap(False)
         settingLayout.addRow(sbox,lab)
         layout.addLayout(settingLayout)
-        self.sbox = sbox  
+        self.sbox = sbox 
+    
+    def set_min_max(self, vmin = 0, vmax = 3):
+        vmax = self.dtype(vmax)
+        vmin = self.dtype(vmin)
+        self.sbox.setMaximum(vmax)
+        self.sbox.setMinimum(vmin)
 
+
+class Combo_box():
+    '''
+    Auxiliary class to create an combobox. 
+    '''
+    def __init__(self, name ='combo name',
+                 initial = '_',
+                 choices = ['_','one','two'],
+                 userdata = [],
+                 layout = None,
+                 width = 150,
+                 write_function = None,
+                 read_function = None):
+        '''
+        Parameters
+        ----------
+        name : str
+            Name of the combobox and label shown on the corresponding widget.
+        initial : str
+            Initial value of the combox. The default is "_".
+        width : int
+            Width of the combobox. The default is 150.
+        choices : list(str) or Enum
+            Combobox choices.
+        userdata : list
+            Additional data stored in the combobox.
+        layout : QWidget
+            Parent QWidget layout where the combobox will be shown.
+            The default is None. Needs to be specified
+        write_function : function or method
+            Function/method that is executed on value change of the combobox
+        read_function : function or method
+            not implemented
+        '''
+        self.name = name
+        self.write_function = write_function
+        self.create_combo_box(name, choices, userdata, width, layout)
+        self.choices = choices
+    
+    @property    
+    def val(self):
+        return self.combo.currentIndex()
+    
+    @property    
+    def text(self):
+        _text = self.combo.currentText()
+        return str(_text) 
+    
+    @property 
+    def current_data(self):
+            _data = self.combo.currentData()
+            return _data    
+       
+    def create_combo_box(self, name, choices, userdata, width, layout):
+        combo = QComboBox()
+        if type(choices) is list:  
+            choices_names = choices
+        elif type(choices) is EnumMeta:
+            choices_names = choices._member_names_
+            userdata = list(choices._value2member_map_.keys())
+        assert len(userdata) in (0,len(choices_names)), f'Uncorrect userdata in {self.name} Combobox'    
+        for idx, choice in enumerate(choices_names):
+            shown_text = choice.replace('_',' ')
+            if len(userdata) == len(choices):
+                data = userdata[idx]
+                combo.addItem(shown_text, userData=data)
+            else:
+                combo.addItem(shown_text)
+
+        #combo.setEditable(True)
+        #combo.lineEdit().setAlignment(Qt.AlignCenter)
+        comboLayout = QFormLayout()
+        comboLayout.setFormAlignment(Qt.AlignLeft)
+        lab = QLabel(name)
+        lab.setWordWrap(False)
+        comboLayout.addRow(combo,lab)
+        layout.addLayout(comboLayout)
+        if self.write_function is not None:
+            combo.currentIndexChanged.connect(self.write_function)
+        # combo.setFixedWidth(width)
+        self.combo = combo
+
+
+class BaseEnum(Enum):
+    
+    @classmethod
+    def to_dict(cls):
+        """Returns a dictionary representation of the enum."""
+        return {e.name: e.value for e in cls}
+    
+    @classmethod
+    def keys(cls):
+        """Returns a list of all the enum keys."""
+        return cls._member_names_
+    
+    @classmethod
+    def values(cls):
+        """Returns a list of all the enum values."""
+        return list(cls._value2member_map_.keys())
+
+
+def add_timer(function):
+    import time
+    """
+    Function decorator to mesaure the execution time of a function or a method.
+    """ 
+    def inner(*args,**kwargs):
+        
+        print(f'\nStarting method "{function.__name__}" ...') 
+        start_time = time.time() 
+        result = function(*args,**kwargs) 
+        end_time = time.time() 
+        print(f'Execution time for method "{function.__name__}": {end_time-start_time:.6f} s') 
+        
+        
+        return result
+    inner.__name__ = function.__name__
+    return inner 

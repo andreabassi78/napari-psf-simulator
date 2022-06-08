@@ -45,7 +45,7 @@ To install latest development version :
 
 2) Select an aberration type (if needed) and press `Calculate PSF` to run the simulator. This will create a new image layer with the 3D PSF.
  
-   The option `Show Airy disk` creates 3 ellipses as a shapes layer, showing the boundaries of the diffraction limited blob.
+   The option `Show Airy disk` creates 3 ellipses in a Shapes layer, showing the boundaries of the diffraction limited blob.
 
 ![raw](https://github.com/andreabassi78/napari-psf-simulator/raw/main/images/figure.png)
 **Napari viewer with the psf-simulator widget showing the in-focus plane of an aberrated PSF**

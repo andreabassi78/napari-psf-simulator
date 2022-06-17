@@ -14,7 +14,6 @@ from napari.qt.threading import thread_worker
 import numpy as np
   
 
-
 class Psf_widget(QWidget):
     '''
     Napari widget to simulate the point spread function of an imaging system,
@@ -39,10 +38,10 @@ class Psf_widget(QWidget):
         self.setup_aberration_ui()
         
         
-    def add_section(self,_layout,_title):
+    def add_section(self, layout, title):
         splitter = QSplitter(Qt.Vertical)
-        _layout.addWidget(splitter)
-        _layout.addWidget(QLabel(_title))
+        layout.addWidget(splitter)
+        layout.addWidget(QLabel(title))
     
     
     def setup_ui(self): 

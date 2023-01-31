@@ -4,14 +4,11 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-try:
-    from .psf_submodules.psf_generator import PSF_simulator
-    from .psf_submodules.gui_utils import Setting, Combo_box
-    from .psf_submodules.aberrations import Aberrations
-except(ImportError):
-    from psf_submodules.psf_generator import PSF_simulator
-    from psf_submodules.gui_utils import Setting, Combo_box
-    from psf_submodules.aberrations import Aberrations
+
+from psf_submodules.psf_generator import PSF_simulator
+from psf_submodules.gui_utils import Setting, Combo_box
+from psf_submodules.aberrations import Aberrations
+
     
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton

@@ -1,8 +1,14 @@
-try:
-    from .psf_submodules.psf_generator import PSF_simulator
-    from .psf_submodules.gui_utils import Setting, Combo_box
-    from .psf_submodules.aberrations import Aberrations
-except(ImportError):
-    from psf_submodules.psf_generator import PSF_simulator
-    from psf_submodules.gui_utils import Setting, Combo_box
-    from psf_submodules.aberrations import Aberrations
+from _widget import Psf_widget 
+import sys
+print(__name__)
+
+
+import napari
+viewer = napari.Viewer()
+widget = Psf_widget(viewer)
+viewer.window.add_dock_widget(widget,
+                                name = 'PSF Simulator @Polimi',
+                                add_vertical_stretch = True)
+
+napari.run()
+    

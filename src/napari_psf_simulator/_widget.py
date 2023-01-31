@@ -9,14 +9,12 @@ from .psf_submodules.psf_generator import PSF_simulator
 from .psf_submodules.gui_utils import Setting, Combo_box
 from .psf_submodules.aberrations import Aberrations
 
-    
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
 from qtpy.QtWidgets import QLabel, QVBoxLayout, QCheckBox
 from napari.qt.threading import thread_worker
 import numpy as np
   
-
 class Psf_widget(QWidget):
     '''
     Napari widget to simulate the point spread function of an imaging system,

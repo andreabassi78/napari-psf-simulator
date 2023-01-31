@@ -1,7 +1,4 @@
-from _widget import Psf_widget 
-import sys
-print(__name__)
-
+from napari_psf_simulator._widget import Psf_widget 
 
 import napari
 viewer = napari.Viewer()

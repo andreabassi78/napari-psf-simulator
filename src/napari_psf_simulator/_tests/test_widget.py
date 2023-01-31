@@ -1,4 +1,4 @@
-from .._widget import Psf_widget
+from napari_psf_simulator._widget import Psf_widget
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
 # capsys is a pytest fixture that captures stdout and stderr output streams
@@ -13,5 +13,5 @@ def test_psf_widget(make_napari_viewer, capsys):
     
     my_widget.calculate_psf()
     
-    assert my_widget.gen.PSF3D.shape[2] == my_widget.Nxy
+    assert my_widget.gen.PSF3D.shape[2] == my_widget.Nxy.val
     

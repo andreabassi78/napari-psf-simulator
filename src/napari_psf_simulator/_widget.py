@@ -4,7 +4,7 @@ Created on Sat Jan 22 00:16:58 2022
 
 @author: Andrea Bassi @Polimi
 """
-from psf_generator import PSF_simulator
+from .psf_generator import PSF_simulator
 from gui_utils import Setting, Combo_box
 from aberrations import Aberrations
 from qtpy.QtCore import Qt

@@ -5,16 +5,23 @@ Created on Sat Jan 22 00:16:58 2022
 @author: Andrea Bassi @Polimi
 """
 
-from .psf_submodules.psf_generator import PSF_simulator
-from .psf_submodules.gui_utils import Setting, Combo_box
-from .psf_submodules.aberrations import Aberrations
-
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QSplitter, QWidget, QPushButton
-from qtpy.QtWidgets import QLabel, QVBoxLayout, QCheckBox
-from napari.qt.threading import thread_worker
 import numpy as np
-  
+from napari.qt.threading import thread_worker
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QLabel,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+
+from .psf_submodules.aberrations import Aberrations
+from .psf_submodules.gui_utils import Combo_box, Setting
+from .psf_submodules.psf_generator import PSF_simulator
+
+
 class Psf_widget(QWidget):
     '''
     Napari widget to simulate the point spread function of an imaging system,
@@ -370,14 +377,3 @@ class Psf_widget(QWidget):
                      name=self.gen.write_name(basename = f'xy_{text}'),
                      colormap='twilight') 
         
-        
-if __name__ == '__main__':
-    import napari
-    viewer = napari.Viewer()
-    widget = Psf_widget(viewer)
-    viewer.window.add_dock_widget(widget,
-                                  name = 'PSF Simulator @Polimi',
-                                  add_vertical_stretch = True)
-    
-    napari.run()
-     

@@ -8,7 +8,7 @@ Created on Tue Feb 23 17:02:23 2021
 import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
 from warnings import warn
-from .zernike_polynomials import nm_normalization, nm_polynomial 
+from zernike_polynomials import nm_normalization, nm_polynomial 
 
 class PSF_simulator():
     '''

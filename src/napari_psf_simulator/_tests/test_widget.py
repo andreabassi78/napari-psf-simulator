@@ -13,6 +13,6 @@ def test_psf_widget(make_napari_viewer, capsys):
     
     my_widget.calculate_psf()
     
-    assert my_widget.viewer.layers[0].shape[2] == my_widget.Nxy
+    assert my_widget.viewer.layers[0].data.shape[2] == my_widget.Nxy
     
     

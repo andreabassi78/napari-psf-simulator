@@ -64,4 +64,7 @@ if __name__ == "__main__":
                )
     
     plt.colorbar()
+    plt.show()
+
+
    

@@ -1,4 +1,8 @@
 from napari_psf_simulator._widget import Psf_widget 
+'''
+Scripts that runs the napari plugin from the IDE
+'''
+
 
 import napari
 viewer = napari.Viewer()

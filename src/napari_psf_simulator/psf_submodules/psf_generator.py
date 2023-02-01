@@ -252,6 +252,8 @@ class PSF_simulator():
         beam= multiple_gaussians(self.kx/self.k_cut_off,
                                   self.ky/self.k_cut_off,
                                   waistx, waisty,
+                                  [0.0], [0.0],
+                                  [1.0], [1.0],
                                   [0.0], [0.0])  
         
         self.amplitude *=beam

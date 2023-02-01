@@ -1,6 +1,7 @@
 from napari_psf_simulator._widget import Psf_widget 
 '''
-Scripts that runs the napari plugin from the IDE
+Script that runs the napari plugin from the IDE. 
+It is not executed when the plugin runs.
 '''
 
 

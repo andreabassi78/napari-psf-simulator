@@ -149,7 +149,7 @@ class Psf_widget(QWidget):
                         )
 
         # add additional aberrations
-        # aberration.add(name = 'MY aberrations',
+        # self.aberrations.add(name = 'MY aberrations',
         #                phase_aberration_function = my_function,
         #                setting0 = 0.0, setting0_units = 'mm',
         #                setting1 = True)

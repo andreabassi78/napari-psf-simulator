@@ -3,11 +3,8 @@ Scripts that runs the napari plugin from the IDE.
 It adds 2 aberrations to to illustrate how to include multiple aberrations to the PSF simulator. 
 This script is just for demonstration. Multiple aberrations are not implemented in the napari widget.
 '''
-
-from napari_psf_simulator._widget import Psf_widget 
+from src.napari_psf_simulator._widget import Psf_widget 
 import napari
-
-
 
 def my_aberrations_function(n1, thickness, alpha, N, M,weight):
     widget.gen.add_slab_scalar(n1, thickness, alpha) # add first aberration

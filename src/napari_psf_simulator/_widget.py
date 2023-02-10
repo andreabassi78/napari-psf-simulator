@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (
 from .psf_submodules.aberrations import Aberrations
 from .psf_submodules.gui_utils import Combo_box, Setting
 from .psf_submodules.psf_generator import PSF_simulator
-
+# from .pyfocus..... import .....  # TODO add reference to pyfocus
 
 class Psf_widget(QWidget):
     '''

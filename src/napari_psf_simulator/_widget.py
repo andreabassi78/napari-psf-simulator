@@ -20,7 +20,11 @@ from qtpy.QtWidgets import (
 from .psf_submodules.aberrations import Aberrations
 from .psf_submodules.gui_utils import Combo_box, Setting
 from .psf_submodules.psf_generator import PSF_simulator
-# from .pyfocus..... import .....  # TODO add reference to pyfocus
+import os, sys
+sys.path.append('C:\\Users\\fernando\\Documents\\GitHub\\PyFocus\\src\\napari_adapter\\')
+sys.path.append('C:\\Users\\fernando\\Documents\\GitHub\\PyFocus\\src\\')
+sys.path.append('C:\\Users\\fernando\\Documents\\GitHub\\PyFocus\\')
+from napari_adapter import PyFocusSimulator  # TODO add reference to pyfocus
 
 class Psf_widget(QWidget):
     '''
@@ -159,7 +163,9 @@ class Psf_widget(QWidget):
         """
         Starts the PSF generators and create the frequency space 
         """
-        self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
+        # self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
+        #                          self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
+        self.gen = PyFocusSimulator(self.NA.val, self.n.val, self.wavelength.val,
                                  self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
     
     

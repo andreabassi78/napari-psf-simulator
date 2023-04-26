@@ -4,7 +4,7 @@ Created on Tue Jan 25 16:34:41 2022
 
 @author: Andrea Bassi @ Polimi
 """
-from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox
+from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QLineEdit
 from qtpy.QtCore import Qt
 from enum import Enum, EnumMeta
 
@@ -108,6 +108,11 @@ class Setting():
             self.set_func = sbox.setChecked
             self.get_func = sbox.checkState
             change_func = sbox.stateChanged
+        elif dtype == str:
+            sbox = QLineEdit()
+            self.set_func = sbox.setText
+            self.get_func = sbox.text
+            change_func = sbox.textChanged
         
         else: raise(TypeError('Specified setting type not supported'))
         

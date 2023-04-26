@@ -5,6 +5,7 @@ Created on Sat Jan 22 00:16:58 2022
 @author: Andrea Bassi @Polimi
 """
 
+from enum import Enum
 import numpy as np
 from napari.qt.threading import thread_worker
 from qtpy.QtCore import Qt
@@ -20,11 +21,8 @@ from qtpy.QtWidgets import (
 from .psf_submodules.aberrations import Aberrations
 from .psf_submodules.gui_utils import Combo_box, Setting
 from .psf_submodules.psf_generator import PSF_simulator
-import os, sys
-sys.path.append('C:\\Users\\fernando\\Documents\\GitHub\\PyFocus\\src\\napari_adapter\\')
-sys.path.append('C:\\Users\\fernando\\Documents\\GitHub\\PyFocus\\src\\')
-sys.path.append('C:\\Users\\fernando\\Documents\\GitHub\\PyFocus\\')
-from napari_adapter import PyFocusSimulator  # TODO add reference to pyfocus
+from .PyFocus.src.napari_adapter.napari_adapter import PyFocusSimulator
+# from PyFocus.napari_adapter import PyFocusSimulator  # TODO add reference to pyfocus after debuging
 
 class Psf_widget(QWidget):
     '''
@@ -45,8 +43,14 @@ class Psf_widget(QWidget):
                  ):
         self.viewer = napari_viewer
         super().__init__()
+        
+        self.generators = Enum('Gen', {
+            "Paraxial approximation": PSF_simulator,
+            "PyFocus": PyFocusSimulator
+        })
+        
         self.setup_ui()
-        self.start_simulator()
+        self.start_base_simulator()
         self.setup_aberration_ui()
         
         
@@ -80,14 +84,38 @@ class Psf_widget(QWidget):
         self.airy_checkbox = QCheckBox("Show Airy disk")
         self.airy_checkbox.setChecked(True)
         layout.addWidget(self.airy_checkbox)
+
+        # add use generator combobox
+        self.generator_combo = Combo_box(name = 'Generator', choices = self.generators,
+                                layout = layout, write_function= self.start_simulator)
+
+        self.create_PyFocus_settings(layout)
+        
+        self.add_section(layout,'Calculate')
+        calculate_layout = QVBoxLayout()
+        layout.addLayout(calculate_layout)
         # add calculate psf button
         calculate_btn = QPushButton('Calculate PSF')
         calculate_btn.clicked.connect(self.calculate_psf)
         layout.addWidget(calculate_btn) 
         
         self.layout = layout
-
-        
+    
+    def create_PyFocus_settings(self, layout):
+        self.add_section(layout,'PyFocus settings')
+        self.PyFocus_layout = QVBoxLayout()
+        layout.addLayout(self.PyFocus_layout)
+        # add show intensity of each component checkbox
+        self.PyFocus_component_checkbox = QCheckBox("Show X,Y,Z component Intensity")
+        self.PyFocus_component_checkbox.setChecked(False)
+        self.PyFocus_layout.addWidget(self.PyFocus_component_checkbox)
+        self.gamma = Setting(name='gamma', dtype=float, initial=45, 
+                          layout = self.PyFocus_layout, write_function = self.reinitialize_simulator)
+        self.beta = Setting(name='beta', dtype=float, initial=90, 
+                          layout = self.PyFocus_layout, write_function = self.reinitialize_simulator)
+        self.custom_mask = Setting(name='Inident field', dtype=str, initial="np.exp(1j*phi)", 
+                          layout = self.PyFocus_layout, write_function = self.reinitialize_simulator)
+    
     def create_base_Settings(self,settings_layout):
         """
         Adds the basic settings for psf-simulator with initial values
@@ -104,13 +132,13 @@ class Psf_widget(QWidget):
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.wavelength = Setting(name='wavelength', dtype=float, initial=0.532, unit = '\u03BCm', spinbox_decimals = 3, 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.Nxy = Setting(name='Nxy', dtype=int, initial=127, vmin=1, vmax = 4095,
+        self.Nxy = Setting(name='Nxy', dtype=int, initial=51, vmin=1, vmax = 4095,
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.Nz = Setting(name='Nz', dtype=int, initial=63, vmin = 1, vmax = 4095,
+        self.Nz = Setting(name='Nz', dtype=int, initial=3, vmin = 1, vmax = 4095,
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dxy = Setting(name='dxy', dtype=float, initial=0.05, unit = '\u03BCm', 
+        self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dz = Setting(name='dz', dtype=float, initial=0.15, unit = '\u03BCm',
+        self.dz = Setting(name='dz', dtype=float, initial=0.50, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         
         
@@ -158,16 +186,21 @@ class Psf_widget(QWidget):
         #                setting0 = 0.0, setting0_units = 'mm',
         #                setting1 = True)
     
+    def start_base_simulator(self):
+        """Starts the base simulator, which uses the paraxial approximation
+        """
+        self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
+                        self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
     
     def start_simulator(self):
         """
-        Starts the PSF generators and create the frequency space 
+        Starts the PSF generator selected by the combobox 
         """
-        # self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
-        #                          self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
-        self.gen = PyFocusSimulator(self.NA.val, self.n.val, self.wavelength.val,
-                                 self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
-    
+        selected_generator = self.generator_combo.current_data
+        self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
+                                self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val, gamma=self.gamma.val, beta=self.beta.val, custom_mask=self.custom_mask.val)
+        self.setup_aberrations()
+        self.reinitialize_simulator()
     
     def reinitialize_simulator(self):
         '''
@@ -177,10 +210,9 @@ class Psf_widget(QWidget):
         '''
         
         self.gen.re_init(self.NA.val, self.n.val, self.wavelength.val,
-                        self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
-        if not hasattr(self, 'selected_aberration'):
-            selection = self.aberration_combo.current_data
-            self.selected_aberration  = self.aberrations.get_by_idx(selection)
+                        self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val, gamma=self.gamma.val, beta=self.beta.val, custom_mask=self.custom_mask.val)
+        selection = self.aberration_combo.current_data
+        self.selected_aberration  = self.aberrations.get_by_idx(selection)
         self.add_aberration(self.selected_aberration)
         
     
@@ -291,17 +323,30 @@ class Psf_widget(QWidget):
             #self.viewer.dims.current_step = (0,0,0)
             
             psf_layer = self.viewer.add_image(psf,
-                             name=self.gen.write_name(basename = 'stack'),
+                             name=self.gen.write_name(basename = 'Intensity'),
                              colormap='twilight')
             self.rescaleZ(psf_layer)
             
+            if self.generator_combo.current_data == PyFocusSimulator and self.PyFocus_component_checkbox.checkState():
+                x_layer = self.viewer.add_image(np.abs(self.gen.field.Ex)**2,
+                                name=self.gen.write_name(basename = 'Ex'),
+                                colormap='twilight')
+                self.rescaleZ(x_layer)
+                y_layer = self.viewer.add_image(np.abs(self.gen.field.Ey)**2,
+                                name=self.gen.write_name(basename = 'Ey'),
+                                colormap='twilight')
+                self.rescaleZ(y_layer)
+                z_layer = self.viewer.add_image(np.abs(self.gen.field.Ez)**2,
+                                name=self.gen.write_name(basename = 'Ez'),
+                                colormap='twilight')
+                self.rescaleZ(z_layer)
+            
             if self.airy_checkbox.checkState():
-               self.show_airy_disk()
-                
+                self.show_airy_disk()
             
             if self.plot_checkbox.checkState():
                 self.gen.plot_psf_profile()
-                
+            
             posxy = self.Nxy.val // 2
             posz = self.Nz.val // 2
             self.viewer.dims.set_point(axis=[0,1,2], value=(0,0,0)) #raises ValueError in napari versions <0.4.13

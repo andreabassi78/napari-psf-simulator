@@ -3,6 +3,7 @@ from src.napari_psf_simulator._widget import Psf_widget
 Script that runs the napari plugin from the IDE. 
 It is not executed when the plugin runs.
 '''
+
 if __name__ == '__main__':
 
     import napari

@@ -4,19 +4,14 @@ Created on Fri May 27 23:31:57 2022
 
 @author: andrea
 """
-from enum import Enum
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QCheckBox,
     QLabel,
-    QPushButton,
     QSplitter,
     QVBoxLayout,
-    QWidget,
-)
+    )
+from .gui_utils import Combo_box
 
-from .gui_utils import Combo_box, Setting
-    
 class SwitchableSection:
     '''
     SwitchableSection class
@@ -39,7 +34,6 @@ class SwitchableSection:
         self.choices = choices
         self.baselayout = baselayout
         self.on_change_function = on_change_function
-        # self.add_splitter(baselayout, name)
         self.combo = Combo_box(name = name, choices = choices,
                                 layout = baselayout, write_function= on_change_function)
         self.add_sub_layout()      
@@ -51,7 +45,9 @@ class SwitchableSection:
 
     def add_sub_layout(self):
         _layout = QVBoxLayout()
+
         self.baselayout.addLayout(_layout)
+
         self.sub_layout = _layout
 
     def remove_sub_layout_content(self):
@@ -67,6 +63,5 @@ class SwitchableSection:
                         else:
                             delete_items(item.layout())
             delete_items(_layout)
-            #self.baselayout.removeItem(_layout)
-            #delattr(self,'sub_layout')
+
         

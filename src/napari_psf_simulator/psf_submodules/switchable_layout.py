@@ -34,8 +34,6 @@ class SwitchableSection:
         ....
 
         '''
-        def _pass(*args,**kwargs):
-            pass
         
         self.name = name
         self.choices = choices

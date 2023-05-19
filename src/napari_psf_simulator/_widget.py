@@ -17,8 +17,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from .psf_submodules.aberrations import Aberrations
+from .psf_submodules.switchable_layout import SwitchableSection
+from .psf_submodules.aberrations import Aberrations 
 from .psf_submodules.gui_utils import Combo_box, Setting
 from .psf_submodules.psf_generator import PSF_simulator
 from .PyFocus.src.napari_adapter.napari_adapter import PyFocusSimulator
@@ -35,26 +35,34 @@ class Psf_widget(QWidget):
     can be added to the UI (Combo_box) with new Settings containing the parameters
     needed to simulate the phase aberrtion.
     For adding aberrations change the self.setup_aberrations() method, 
-    adding a new element to Aberrations as defined in napari_psf_simulator.aberrations
-        
+    adding a new element to Aberrations as defined in napari_psf_simulator.aberrations  
     '''
+    generators = Enum('Gen', 
+                      {"Scalar": PSF_simulator,
+                       "Vectorial": PyFocusSimulator
+                      })
+    
+    pyfocus_amplitudes = Enum('py_amplitude', 
+                      {"Uniform": 0,
+                       "Gaussian": 1
+                      })
+    
+    pyfocus_phases = Enum('py_phase', 
+                      {"Uniform": 0,
+                       "Vortex": 1
+                      })
     
     def __init__(self, napari_viewer,
                  ):
         self.viewer = napari_viewer
         super().__init__()
         
-        self.generators = Enum('Gen', {
-            "Paraxial approximation": PSF_simulator,
-            "PyFocus": PyFocusSimulator
-        })
-        
         self.setup_ui()
         self.start_base_simulator()
-        self.setup_aberration_ui()
+        # self.setup_aberration_ui()
         
         
-    def add_section(self, layout, title):
+    def add_splitter(self, layout, title):
         splitter = QSplitter(Qt.Vertical)
         layout.addWidget(splitter)
         layout.addWidget(QLabel(title))
@@ -71,7 +79,7 @@ class Psf_widget(QWidget):
         self.setLayout(layout)
         
         # add Settings
-        self.add_section(layout,'Settings')
+        self.add_splitter(layout,'Settings')
         settings_layout = QVBoxLayout()
         layout.addLayout(settings_layout)
         self.create_base_Settings(settings_layout)
@@ -82,39 +90,77 @@ class Psf_widget(QWidget):
         layout.addWidget(self.plot_checkbox)
         # add show Airy disk checkbox
         self.airy_checkbox = QCheckBox("Show Airy disk")
-        self.airy_checkbox.setChecked(True)
+        self.airy_checkbox.setChecked(False)
         layout.addWidget(self.airy_checkbox)
 
-        # add use generator combobox
-        self.generator_combo = Combo_box(name = 'Generator', choices = self.generators,
-                                layout = layout, write_function= self.start_simulator)
-
-        self.create_PyFocus_settings(layout)
+        # add use generator combobox with switchable section
+        self.add_splitter(layout,'PSF generator')
+        self.generator_section = SwitchableSection(name = 'Generator',
+                                      baselayout = layout, choices = self.generators,
+                                      on_change_function = self.change_generator)
         
-        self.add_section(layout,'Calculate')
+        self.add_splitter(layout,'Calculate')
         calculate_layout = QVBoxLayout()
         layout.addLayout(calculate_layout)
         # add calculate psf button
         calculate_btn = QPushButton('Calculate PSF')
         calculate_btn.clicked.connect(self.calculate_psf)
-        layout.addWidget(calculate_btn) 
-        
+        layout.addWidget(calculate_btn)
         self.layout = layout
-    
-    def create_PyFocus_settings(self, layout):
-        self.add_section(layout,'PyFocus settings')
-        self.PyFocus_layout = QVBoxLayout()
-        layout.addLayout(self.PyFocus_layout)
+
+    def change_generator(self):
+        self.generator_section.remove_sub_layout_content()
+        selection_name = self.generator_section.combo.text
+        print('Selection name:', selection_name)
+        if selection_name == "Vectorial":
+            self.add_PyFocus_settings(self.generator_section.sub_layout)
+        self.start_simulator()
+
+    def add_PyFocus_settings(self, layout):
         # add show intensity of each component checkbox
-        self.PyFocus_component_checkbox = QCheckBox("Show X,Y,Z component Intensity")
-        self.PyFocus_component_checkbox.setChecked(False)
-        self.PyFocus_layout.addWidget(self.PyFocus_component_checkbox)
-        self.gamma = Setting(name='gamma', dtype=float, initial=45, 
-                          layout = self.PyFocus_layout, write_function = self.reinitialize_simulator)
-        self.beta = Setting(name='beta', dtype=float, initial=90, 
-                          layout = self.PyFocus_layout, write_function = self.reinitialize_simulator)
-        self.custom_mask = Setting(name='Inident field', dtype=str, initial="np.exp(1j*phi)", 
-                          layout = self.PyFocus_layout, write_function = self.reinitialize_simulator)
+
+        self.add_splitter(layout, 'Pyfocus settings')
+        self.pyFocus_component_checkbox = QCheckBox("Show X,Y,Z component Intensity")
+        self.pyFocus_component_checkbox.setChecked(False)
+        layout.addWidget(self.pyFocus_component_checkbox)
+        self.lens_aperture = Setting(name='lens radius', dtype=float, initial=3, unit='mm', 
+                          layout = layout, write_function = self.reinitialize_simulator)
+        
+        self.amplitude_section = SwitchableSection(name = 'Amplitude',
+                                      baselayout = layout, choices = self.pyfocus_amplitudes,
+                                      on_change_function = self.change_amplitude)
+        self.change_amplitude()
+        self.phase_section = SwitchableSection(name = 'Phase',
+                                      baselayout = layout, choices = self.pyfocus_phases,
+                                      on_change_function = self.change_phase)
+        self.change_phase()
+        self.add_splitter(layout, 'Polarization')
+        self.gamma = Setting(name='gamma', dtype=float, initial=45, unit='deg', 
+                          layout = layout, write_function = self.reinitialize_simulator)
+        self.beta = Setting(name='beta', dtype=float, initial=90, unit='deg',
+                          layout = layout, write_function = self.reinitialize_simulator)
+        
+    def change_amplitude(self):
+        self.amplitude_section.remove_sub_layout_content()
+        if self.amplitude_section.combo.text == 'Uniform':
+            self.custom_mask = "1"    
+        elif self.amplitude_section.combo.text == 'Gaussian':
+            self.custom_mask = 'np.exp((rho/waist)**2)' #TODO: insert the correct value
+            self.waist = Setting(name='waist', dtype=float, initial=2, unit='mm', 
+                        layout = self.amplitude_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+
+    def change_phase(self):
+        self.phase_section.remove_sub_layout_content()
+        if self.phase_section.combo.text == 'Uniform':
+            pass
+            # self.custom_mask = '1' #TODO: insert the correct value 
+        elif self.phase_section.combo.text == 'Vortex':
+            self.custom_mask = 'np.exp(1j*phi)' #TODO: insert the correct value
+            self.order = Setting(name='order', dtype=int, initial=1, 
+                        layout = self.phase_section.sub_layout,
+                        write_function = self.reinitialize_simulator) 
+
     
     def create_base_Settings(self,settings_layout):
         """
@@ -147,11 +193,11 @@ class Psf_widget(QWidget):
         Creates the aberration combobox
         '''
         self.setup_aberrations()
-        self.add_section(self.layout,'Aberration')
+        self.add_splitter(self.layout,'Aberration')
         self.aberration_combo = Combo_box(name = 'Aberration', choices = self.aberrations.enum(),
                                 layout = self.layout, write_function= self._on_aberration_change)
         
-        
+
     def setup_aberrations(self):
         '''
         Defines the available aberrations that will appear in the combobox.
@@ -196,9 +242,11 @@ class Psf_widget(QWidget):
         """
         Starts the PSF generator selected by the combobox 
         """
-        selected_generator = self.generator_combo.current_data
+        selected_generator = self.generator_section.combo.current_data
         self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
-                                self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val, gamma=self.gamma.val, beta=self.beta.val, custom_mask=self.custom_mask.val)
+                                self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val,
+                                gamma = self.gamma.val, beta = self.beta.val,
+                                custom_mask = self.custom_mask)
         self.setup_aberrations()
         self.reinitialize_simulator()
     
@@ -210,11 +258,11 @@ class Psf_widget(QWidget):
         '''
         
         self.gen.re_init(self.NA.val, self.n.val, self.wavelength.val,
-                        self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val, gamma=self.gamma.val, beta=self.beta.val, custom_mask=self.custom_mask.val)
+                        self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val,
+                        gamma=self.gamma.val, beta=self.beta.val, custom_mask=self.custom_mask)
         selection = self.aberration_combo.current_data
         self.selected_aberration  = self.aberrations.get_by_idx(selection)
-        self.add_aberration(self.selected_aberration)
-        
+        self.add_aberration(self.selected_aberration) 
     
     def add_aberration(self, selected_aberration):
         '''
@@ -224,6 +272,7 @@ class Psf_widget(QWidget):
         function = selected_aberration.phase_aberration_function
         function(**params)
     
+
     def _on_aberration_change(self, current_data):
         if hasattr(self, 'aberration_layout'):
             self.remove_layout(self.aberration_layout)     
@@ -244,7 +293,6 @@ class Psf_widget(QWidget):
             self.selected_aberration.settings[key] = getattr(self,key).val
         self.reinitialize_simulator()
 
-    
 
     def create_aberration_Settings(self,  settings_dict, units_dict, layout, write_function):
         """
@@ -294,7 +342,7 @@ class Psf_widget(QWidget):
         delete_items(_layout)
         self.layout.removeItem(_layout)
         delattr(self, 'aberration_layout')
-        
+
     
     def rescaleZ(self, layer):
         """
@@ -327,7 +375,7 @@ class Psf_widget(QWidget):
                              colormap='twilight')
             self.rescaleZ(psf_layer)
             
-            if self.generator_combo.current_data == PyFocusSimulator and self.PyFocus_component_checkbox.checkState():
+            if self.generator_section.combo.current_data == PyFocusSimulator and self.pyFocus_component_checkbox.checkState():
                 x_layer = self.viewer.add_image(np.abs(self.gen.field.Ex)**2,
                                 name=self.gen.write_name(basename = 'Ex'),
                                 colormap='twilight')

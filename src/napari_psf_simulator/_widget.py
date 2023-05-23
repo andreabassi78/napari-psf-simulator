@@ -162,19 +162,20 @@ class Psf_widget(QWidget):
                         layout = self.amplitude_section.sub_layout,
                         write_function = self.reinitialize_simulator)
         self.reinitialize_simulator()
-
+    
+    def _set_custom_mask(self):
+        self.custom_mask = self.custom_mask = f'np.exp(1j*phi*{int(self.order.val)})'
+        self.reinitialize_simulator()
+        
     def change_phase(self):
         self.phase_section.remove_sub_layout_content()
         if self.phase_section.combo.text == 'Uniform':
-            pass
-            # self.custom_mask = '1' #TODO: fix this and put in the correct place
+            self.custom_mask = '1'
         elif self.phase_section.combo.text == 'Vortex':
-            self.custom_mask = 'np.exp(1j*phi)' #TODO: insert the correct value
             self.order = Setting(name='order', dtype=int, initial=1, 
                         layout = self.phase_section.sub_layout,
-                        write_function = self.reinitialize_simulator)
+                        write_function = self._set_custom_mask)
         self.reinitialize_simulator() 
-
 
     def change_aberration(self):
         self.aberration_section.remove_sub_layout_content()

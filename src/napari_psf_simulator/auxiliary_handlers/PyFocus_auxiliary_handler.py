@@ -86,7 +86,7 @@ class PyFocusSettingsHandler:
             raise Exception(f"Combo text for polarization has a wrong value: {self.widget.polarization_section.combo.text}")
 
     def set_gaussian_amplitude(self):
-        self.widget.custom_amplitude = f'np.exp((rho/{self.widget.waist.val})**2)'
+        self.widget.custom_amplitude = f'np.exp(-(rho/{self.widget.waist.val*1000000})**2/2)' # The *1000000 factor comes from a passage from mm to nm
         self.widget.reinitialize_simulator()
 
     def change_amplitude(self):
@@ -103,7 +103,7 @@ class PyFocusSettingsHandler:
             raise Exception(f"Combo text for amplitude has a wrong value: {self.widget.amplitude_section.combo.text}")
 
     def set_vortex_phase_mask(self):
-        self.widget.custom_phase = self.widget.custom_mask = f'np.exp(1j*phi*{int(self.widget.order.val)})'
+        self.widget.custom_phase = self.widget.custom_mask = f'phi*{int(self.widget.order.val)}'
         self.widget.reinitialize_simulator()
         
     def change_phase(self):

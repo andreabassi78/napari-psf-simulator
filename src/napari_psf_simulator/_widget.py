@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QColor
 from .psf_submodules.gui_utils import Setting, SwitchableSection
 from .psf_submodules.psf_generator import PSF_simulator
-from .auxiliary_functions.PyFocus_auxiliary_functions import PyFocusSettingsHandler
+from .auxiliary_handlers.PyFocus_auxiliary_handler import PyFocusSettingsHandler
 from .PyFocus.src.napari_adapter.napari_adapter import PyFocusSimulator
 # from PyFocus.napari_adapter import PyFocusSimulator  # TODO add reference to pyfocus after debuging
 
@@ -194,8 +194,8 @@ class Psf_widget(QWidget):
         selected_generator = self.generator_section.combo.current_data
         
         if selected_generator is PyFocusSimulator:
-            self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
-                                self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val,
+            self.gen = selected_generator(NA=self.NA.val, n=self.n.val, wavelength=self.wavelength.val, lens_aperture=self.lens_aperture.val,
+                                Nxy=self.Nxy.val , Nz=self.Nz.val, dr=self.dxy.val, dz=self.dz.val,
                                 gamma = self.gamma, beta = self.beta,
                                 incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
         elif selected_generator is PSF_simulator:

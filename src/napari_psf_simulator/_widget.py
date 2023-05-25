@@ -50,6 +50,14 @@ class Psf_widget(QWidget):
                       {"Uniform": 0,
                        "Vortex": 1
                         })
+
+    pyfocus_polarizations = Enum('py_polarization', 
+                      {"X Linnear": 0,
+                       "Y Linnear": 1,
+                       "Right handed circular": 2,
+                       "Left handed circular": 3,
+                       "Custom": 4
+                        })
     
     aberrations = Enum('Aberrations',
                        {"NONE": 0,
@@ -126,10 +134,16 @@ class Psf_widget(QWidget):
         self.generator_section.remove_sub_layout_content()
         selection_name = self.generator_section.combo.text
         if selection_name == "Vectorial":
+            self.setup_pyfocus_default_settings_values()
             self.add_PyFocus_settings(self.generator_section.sub_layout)
         self.reinitialize_simulator()
 
-
+    def setup_pyfocus_default_settings_values(self):
+        self.gamma = 0
+        self.beta = 0
+        self.custom_amplitude = 1
+        self.custom_phase = 0
+    
     def add_PyFocus_settings(self, layout):
         # add show intensity of each component checkbox
 
@@ -147,35 +161,78 @@ class Psf_widget(QWidget):
                                       baselayout = layout, choices = self.pyfocus_phases,
                                       on_change_function = self.change_phase)
         self.add_splitter(layout, 'Polarization')
-        self.gamma = Setting(name='gamma', dtype=float, initial=45, unit='deg', 
-                          layout = layout, write_function = self.reinitialize_simulator)
-        self.beta = Setting(name='beta', dtype=float, initial=90, unit='deg',
-                          layout = layout, write_function = self.reinitialize_simulator)
+        self.polarization_section = SwitchableSection(name = 'polarization',
+                                      baselayout = layout, choices = self.pyfocus_polarizations,
+                                      on_change_function = self.change_polarization)
+    
+    def _set_polarization(self):
+        self.gamma = self.gamma_setting.val
+        self.beta = self.beta_setting.val
+        self.reinitialize_simulator()
 
+    def change_polarization(self):
+        self.polarization_section.remove_sub_layout_content()
+        if self.polarization_section.combo.text == "X Linnear":
+            self.gamma = 0
+            self.beta = 0
+            self.reinitialize_simulator()
+        elif self.polarization_section.combo.text == "Y Linnear":
+            self.gamma = 90
+            self.beta = 0
+            self.reinitialize_simulator()
+        elif self.polarization_section.combo.text == "Right handed circular":
+            self.gamma = 45
+            self.beta = 90
+            self.reinitialize_simulator()
+        elif self.polarization_section.combo.text == "Left handed circular":
+            self.gamma = 45
+            self.beta = -90
+            self.reinitialize_simulator()
+        elif self.polarization_section.combo.text == "Custom":
+            self.gamma_setting = Setting(name='gamma', dtype=float, initial=45, unit='deg', 
+                            layout = self.polarization_section.sub_layout, write_function = self._set_polarization)
+            self.beta_setting = Setting(name='beta', dtype=float, initial=90, unit='deg',
+                            layout = self.polarization_section.sub_layout, write_function = self._set_polarization)
+            self._set_polarization()
+        else:
+            raise Exception(f"Combo text for polarization has a wrong value: {self.polarization_section.combo.text}")
+        
+        
+    def _set_gaussian_amplitude(self):
+        self.custom_amplitude = f'np.exp((rho/{self.waist.val})**2)'
+        self.reinitialize_simulator()
+    
     def change_amplitude(self):
         self.amplitude_section.remove_sub_layout_content()
         if self.amplitude_section.combo.text == 'Uniform':
-            self.custom_mask = "1" #TODO: fix this and put in the correct place   
+            self.custom_amplitude = "1"
+            self.reinitialize_simulator()
         elif self.amplitude_section.combo.text == 'Gaussian':
-            self.custom_mask = 'np.exp((rho/waist)**2)' #TODO: fix this (waist is not recongnized) and put in the correct place
             self.waist = Setting(name='waist', dtype=float, initial=2, unit='mm', 
                         layout = self.amplitude_section.sub_layout,
-                        write_function = self.reinitialize_simulator)
-        self.reinitialize_simulator()
+                        write_function = self._set_gaussian_amplitude)
+            self._set_gaussian_amplitude()
+        else:
+            raise Exception(f"Combo text for amplitude has a wrong value: {self.amplitude_section.combo.text}")
+        
     
-    def _set_custom_mask(self):
-        self.custom_mask = self.custom_mask = f'np.exp(1j*phi*{int(self.order.val)})'
+    def _set_vortex_phase_mask(self):
+        self.custom_phase = self.custom_mask = f'np.exp(1j*phi*{int(self.order.val)})'
         self.reinitialize_simulator()
         
     def change_phase(self):
         self.phase_section.remove_sub_layout_content()
         if self.phase_section.combo.text == 'Uniform':
-            self.custom_mask = '1'
+            self.custom_phase = '0' # Any constant value would do
+            self.reinitialize_simulator()
         elif self.phase_section.combo.text == 'Vortex':
             self.order = Setting(name='order', dtype=int, initial=1, 
                         layout = self.phase_section.sub_layout,
-                        write_function = self._set_custom_mask)
-        self.reinitialize_simulator() 
+                        write_function = self._set_vortex_phase_mask)
+            self._set_vortex_phase_mask()
+        else:
+            raise Exception(f"Combo text for phase has a wrong value: {self.phase_section.combo.text}")
+        
 
     def change_aberration(self):
         self.aberration_section.remove_sub_layout_content()
@@ -251,12 +308,13 @@ class Psf_widget(QWidget):
         if selected_generator is PyFocusSimulator:
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
                                 self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val,
-                                gamma = self.gamma.val, beta = self.beta.val,
-                                custom_mask = self.custom_mask)
+                                gamma = self.gamma, beta = self.beta,
+                                incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
         elif selected_generator is PSF_simulator:
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
                                 self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
         self.add_aberration() 
+        print("reinitialize_simulator")
     
 
     def add_aberration(self):

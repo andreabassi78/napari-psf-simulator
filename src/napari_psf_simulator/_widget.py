@@ -42,17 +42,28 @@ class Psf_widget(QWidget):
                        "Vectorial": PyFocusSimulator
                         })
     
-    aberrations = Enum('Aberrations',
+    aberrations = { # Passing a class as the key to a dictionary might be werid but it works just fine
+        PyFocusSimulator: Enum('Aberrations', 
+                       {"NONE": 0,
+                        "INTERFACE":1,
+                        "ZERNIKE":2
+                        }),
+        PSF_simulator: Enum('Aberrations',
                        {"NONE": 0,
                         "SLAB":1,
                         "ZERNIKE":2
                         })
+    }
     
     def __init__(self, napari_viewer,
                  ):
         self.viewer = napari_viewer
         super().__init__()
         
+        self.aberration_changer_mapper = {
+            PyFocusSimulator: self.change_vectorial_aberration,
+            PSF_simulator: self.change_scalar_aberration
+        }
         self.setup_ui()
         
         
@@ -99,10 +110,10 @@ class Psf_widget(QWidget):
                                       baselayout = layout, choices = self.generators,
                                       on_change_function = self.change_generator)
         # add switchable section for aberrations
-        self.add_splitter(layout,'Aberrations', color=(2,10,10))
+        self.add_splitter(self.generator_section.sub_layout,'Aberrations', color=(2,10,10))
         self.aberration_section = SwitchableSection(name = 'Aberrations',
-                                      baselayout = layout, choices = self.aberrations,
-                                      on_change_function = self.change_aberration)
+                                      baselayout = self.generator_section.sub_layout, choices = self.aberrations[self.generator_section.combo.current_data],
+                                      on_change_function = self.aberration_changer_mapper[self.generator_section.combo.current_data])
 
         # add PSF calculation section
         self.add_splitter(layout,'Calculate Point Spread Function',color=(2,10,10))
@@ -114,15 +125,47 @@ class Psf_widget(QWidget):
 
     def change_generator(self):
         self.generator_section.remove_sub_layout_content()
-        selection_name = self.generator_section.combo.text
-        if selection_name == "Vectorial":
+        selected_generator = self.generator_section.combo.current_data
+        if selected_generator is PSF_simulator:
+            pass
+        elif selected_generator is PyFocusSimulator:
             settings_handler = PyFocusSettingsHandler(widget = self)
             settings_handler.setup_pyfocus_default_settings_values()
             settings_handler.add_PyFocus_settings(self.generator_section.sub_layout)
+        self.add_splitter(self.generator_section.sub_layout,'Aberrations', color=(2,10,10))
+        self.aberration_section = SwitchableSection(name = 'Aberrations',
+                                    baselayout = self.generator_section.sub_layout, choices = self.aberrations[self.generator_section.combo.current_data],
+                                    on_change_function = self.aberration_changer_mapper[self.generator_section.combo.current_data])
         self.reinitialize_simulator()
 
+    def change_vectorial_aberration(self):
+        self.aberration_section.remove_sub_layout_content()
+        
+        if self.aberration_section.combo.text == 'NONE':
+            pass 
+        
+        elif self.aberration_section.combo.text == 'INTERFACE':           
+            self.n1 = Setting(name='n1', dtype=float, initial=1.51, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator) 
+            self.axial_position = Setting(name='axial position', dtype=float, initial=0.0, unit = 'nm', 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+        
+        elif self.aberration_section.combo.text == 'ZERNIKE':           
+            self.N = Setting(name='N', dtype=int, initial=3, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+            self.M = Setting(name='M', dtype=int, initial=1, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+            self.weight = Setting(name='weight', dtype=float, initial=0.6, unit = '\u03BB', 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+        self.reinitialize_simulator() 
+ 
 
-    def change_aberration(self):
+    def change_scalar_aberration(self):
         self.aberration_section.remove_sub_layout_content()
         
         if self.aberration_section.combo.text == 'NONE':
@@ -198,13 +241,25 @@ class Psf_widget(QWidget):
                                 Nxy=self.Nxy.val , Nz=self.Nz.val, dr=self.dxy.val, dz=self.dz.val,
                                 gamma = self.gamma, beta = self.beta,
                                 incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
+            self.add_vectorial_aberration() 
         elif selected_generator is PSF_simulator:
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
                                 self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
-        self.add_aberration() 
+            self.add_scalar_aberration() 
     
 
-    def add_aberration(self):
+    def add_vectorial_aberration(self): # TODO
+        '''
+        Adds the effect of a phase aberration
+        '''  
+        if self.aberration_section.combo.text == 'NONE':
+            pass
+        elif self.aberration_section.combo.text == 'INTERFACE':
+            self.gen.add_interface(self.n1.val, self.axial_position.val)
+        elif self.aberration_section.combo.text == 'ZERNIKE':
+            self.gen.add_Zernike_aberration(self.N.val, self.M.val, self.weight.val)  
+
+    def add_scalar_aberration(self):
         '''
         Adds the effect of a phase aberration
         '''  

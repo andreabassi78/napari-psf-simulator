@@ -55,6 +55,10 @@ class Psf_widget(QWidget):
                         })
     }
     
+    # Default internal values for psf_generator
+    Nxy = 201
+    Nz = 201
+    
     def __init__(self, napari_viewer,
                  ):
         self.viewer = napari_viewer
@@ -214,7 +218,7 @@ class Psf_widget(QWidget):
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.fov_xy = Setting(name='FOV xy', dtype=float, initial=1.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.fov_z = Setting(name='FOV z', dtype=float, initial=1.5, unit = '\u03BCm',
+        self.fov_z = Setting(name='FOV z', dtype=float, initial=3.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
@@ -225,8 +229,9 @@ class Psf_widget(QWidget):
     def start_base_simulator(self):
         """Starts the base simulator, using scalar propagation
         """
+        self._calculate_N_for_scalar_calculation()
         self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
-                        self.fov_xy.val , self.fov_z.val, dr = self.dxy.val, dz = self.dz.val)
+                            self.Nxy , self.Nz, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
     
 
     def reinitialize_simulator(self):
@@ -243,10 +248,24 @@ class Psf_widget(QWidget):
                                 incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
             self.add_vectorial_aberration() 
         elif selected_generator is PSF_simulator:
+            self._calculate_N_for_scalar_calculation()
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
-                                self.fov_xy.val , self.fov_z.val, dr = self.dxy.val, dz = self.dz.val)
+                                self.Nxy , self.Nz, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
             self.add_scalar_aberration() 
     
+    def _calculate_N_for_scalar_calculation(self):
+        """Calculates the dimmensions of the field to show to the user a cropped field, since the field done in the calculation is bigger
+        Note: This pass should be performed by the psf_generator, but I was unable to perform it there since the field returned was null for certain values of Nxy and Nz and the cause was not found
+        """
+        self.Nxy_show = int(self.fov_xy.val//self.dxy.val)
+        self.Nz_show = int(self.fov_z.val//self.dz.val)
+        # The number of points must be odd so that the center pixel corresponds the the (0,0,0) coordinates
+        if self.Nxy_show % 2 == 0: self.Nxy_show += 1
+        if self.Nz_show % 2 == 0: self.Nz_show += 1
+        # We make the fov to show not to be greater than the one we calculate
+        if self.Nxy_show >= self.Nxy: self.Nxy = self.Nxy_show
+        if self.Nz_show >= self.Nz: self.Nz = self.Nz_show
+        print(f"{self.Nz_show=}, {self.Nxy_show=}")
 
     def add_vectorial_aberration(self): # TODO
         '''
@@ -322,8 +341,8 @@ class Psf_widget(QWidget):
             if self.plot_checkbox.checkState():
                 self.gen.plot_psf_profile()
             
-            posxy = self.fov_xy.val // 2
-            posz = self.fov_z.val // 2
+            posxy = self.Nxy_show // 2
+            posz = self.Nz_show // 2
             self.viewer.dims.set_point(axis=[0,1,2], value=(0,0,0)) #raises ValueError in napari versions <0.4.13
             self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
             
@@ -342,8 +361,8 @@ class Psf_widget(QWidget):
        #print(deltaZ)
        #print('paraxial:', 2*self.n.val* self.wavelength.val/ self.NA.val**2)
        
-       posxy = self.fov_xy.val//2
-       posz = self.fov_z.val//2
+       posxy = self.Nxy_show.val//2
+       posz = self.Nz_show.val//2
        center = np.array([posz,posxy,posxy])
        deltar = deltaR/self.dxy.val
        deltaz = deltaZ/self.dz.val
@@ -364,7 +383,7 @@ class Psf_widget(QWidget):
                            center+np.array([-deltaz, 0, deltar])]
                           )
        
-       if (self.dz.val*self.fov_z.val)/2 > deltaZ:
+       if (self.dz.val*self.Nz_show.val)/2 > deltaZ:
            ellipses = [bbox_yx, bbox_zy, bbox_zx]
        else:
            ellipses = [bbox_yx]
@@ -389,8 +408,8 @@ class Psf_widget(QWidget):
             im_xz = np.amax(PSF, axis=1)
             text = 'mip'
         else:
-            fov_z,Ny,Nx = PSF.shape
-            im_xy = PSF[fov_z//2,:,:]
+            Nz,Ny,Nx = PSF.shape
+            im_xy = PSF[Nz//2,:,:]
             im_xz = PSF[:,Ny//2,:]
             text = 'plane'
             

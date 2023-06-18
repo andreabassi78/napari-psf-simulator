@@ -14,8 +14,8 @@ class PyFocusSettingsHandler:
                         })
 
     pyfocus_polarizations = Enum('py_polarization', 
-                        {"X Linnear": 0,
-                        "Y Linnear": 1,
+                        {"X linear": 0,
+                        "Y linear": 1,
                         "Right handed circular": 2,
                         "Left handed circular": 3,
                         "Custom": 4
@@ -60,11 +60,11 @@ class PyFocusSettingsHandler:
 
     def change_polarization(self):
         self.widget.polarization_section.remove_sub_layout_content()
-        if self.widget.polarization_section.combo.text == "X Linnear":
+        if self.widget.polarization_section.combo.text == "X linear":
             self.widget.gamma = 0
             self.widget.beta = 0
             self.widget.reinitialize_simulator()
-        elif self.widget.polarization_section.combo.text == "Y Linnear":
+        elif self.widget.polarization_section.combo.text == "Y linear":
             self.widget.gamma = 90
             self.widget.beta = 0
             self.widget.reinitialize_simulator()

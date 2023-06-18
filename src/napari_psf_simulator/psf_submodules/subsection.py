@@ -62,7 +62,7 @@ class SubSection():
     
     def __init__(self):
         
-        self.add('NONE')
+        self.add('None')
     
     def add(self, name='MY_SECTION',
                        subsection_function = None,

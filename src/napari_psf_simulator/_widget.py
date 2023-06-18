@@ -44,14 +44,14 @@ class Psf_widget(QWidget):
     
     aberrations = { # Passing a class as the key to a dictionary might be werid but it works just fine
         PyFocusSimulator: Enum('Aberrations', 
-                       {"NONE": 0,
-                        "INTERFACE":1,
-                        "ZERNIKE":2
+                       {"None": 0,
+                        "Interface":1,
+                        "Zernike":2
                         }),
         PSF_simulator: Enum('Aberrations',
-                       {"NONE": 0,
-                        "SLAB":1,
-                        "ZERNIKE":2
+                       {"None": 0,
+                        "Slab":1,
+                        "Zernike":2
                         })
     }
     
@@ -141,10 +141,10 @@ class Psf_widget(QWidget):
     def change_vectorial_aberration(self):
         self.aberration_section.remove_sub_layout_content()
         
-        if self.aberration_section.combo.text == 'NONE':
+        if self.aberration_section.combo.text == 'None':
             pass 
         
-        elif self.aberration_section.combo.text == 'INTERFACE':           
+        elif self.aberration_section.combo.text == 'Interface':           
             self.n1 = Setting(name='n1', dtype=float, initial=1.51, 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator) 
@@ -152,7 +152,7 @@ class Psf_widget(QWidget):
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
         
-        elif self.aberration_section.combo.text == 'ZERNIKE':           
+        elif self.aberration_section.combo.text == 'Zernike':           
             self.N = Setting(name='N', dtype=int, initial=3, 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
@@ -168,10 +168,10 @@ class Psf_widget(QWidget):
     def change_scalar_aberration(self):
         self.aberration_section.remove_sub_layout_content()
         
-        if self.aberration_section.combo.text == 'NONE':
+        if self.aberration_section.combo.text == 'None':
             pass 
         
-        elif self.aberration_section.combo.text == 'SLAB':           
+        elif self.aberration_section.combo.text == 'Slab':           
             self.n1 = Setting(name='n1', dtype=float, initial=1.51, 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator) 
@@ -182,7 +182,7 @@ class Psf_widget(QWidget):
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
         
-        elif self.aberration_section.combo.text == 'ZERNIKE':           
+        elif self.aberration_section.combo.text == 'Zernike':           
             self.N = Setting(name='N', dtype=int, initial=3, 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
@@ -252,22 +252,22 @@ class Psf_widget(QWidget):
         '''
         Adds the effect of a phase aberration
         '''  
-        if self.aberration_section.combo.text == 'NONE':
+        if self.aberration_section.combo.text == 'None':
             pass
-        elif self.aberration_section.combo.text == 'INTERFACE':
+        elif self.aberration_section.combo.text == 'Interface':
             self.gen.add_interface(self.n1.val, self.axial_position.val)
-        elif self.aberration_section.combo.text == 'ZERNIKE':
+        elif self.aberration_section.combo.text == 'Zernike':
             self.gen.add_Zernike_aberration(self.N.val, self.M.val, self.weight.val)  
 
     def add_scalar_aberration(self):
         '''
         Adds the effect of a phase aberration
         '''  
-        if self.aberration_section.combo.text == 'NONE':
+        if self.aberration_section.combo.text == 'None':
             pass
-        elif self.aberration_section.combo.text == 'SLAB':
+        elif self.aberration_section.combo.text == 'Slab':
             self.gen.add_slab_scalar(self.n1.val, self.thickness.val, self.alpha.val)
-        elif self.aberration_section.combo.text == 'ZERNIKE':
+        elif self.aberration_section.combo.text == 'Zernike':
             self.gen.add_Zernike_aberration(self.N.val, self.M.val, self.weight.val)  
 
     

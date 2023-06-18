@@ -536,6 +536,7 @@ class PSF_simulator():
     def write_name(self, basename =''):
         
         name = '_'.join([basename,
+                        'scalar',
                         f'NA_{self.NA:.1f}',
                         f'n_{self.n:.1f}'])
        

@@ -62,7 +62,7 @@ class Aberrations():
     
     def __init__(self):
         
-        self.add('NONE')
+        self.add('None')
     
     def add(self, name='MY_ABERRATION',
                        phase_aberration_function = None,

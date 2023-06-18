@@ -16,33 +16,17 @@ class PSF_simulator():
     with different pupils and various abberrations. 
     '''
     
-    def __init__(self, NA=0.5, n=1, wavelength=0.532, Nxy=127, Nz=3, **kwargs):
+    def __init__(self, NA=0.5, n=1, wavelength=0.532, fov_xy=1000, fov_z=1000, **kwargs):
         '''
         NA: numerical aperture
         n: refractive index
         wavelength
-        Nxy: number of pixels in kx-ky (pixels in x-y is Nxy-1)
-        Nz: number of pixels in kz (and in z) 
+        fov_xy: field of view in x,y in nm to return (for the internal calcualtion a bigger fov might be used)
+        fov_z: field of view in z in nm to return (for the internal calcualtion a bigger fov might be used)
         over_sampling: ratio between the Abbe resolution and spatial sampling
         aspect_ratio: ratio between z and xy sampling
         
         '''
-        if Nxy % 2 == 0:
-            Nxy +=1 
-            warn(f'Number of pixels Nxy must be odd, changed to {Nxy}')
-        if Nz % 2 == 0:
-             Nz +=1 #XY number of pixels must be odd 
-             warn(f'Number of pixels Nz must be odd, changed to {Nz}')
-             
-        self.NA = NA # Numerical aperture
-        self.n = n # refraction index at the object
-        self.wavelength = wavelength
-        
-        self.Nxy = Nxy
-        self.Nz = Nz
-        
-        DeltaXY = wavelength/2/NA # Diffraction limited transverse resolution
-        
         if not 'dr' in kwargs:
             over_sampling = 4 # spatial sampling in xy, chosen to be a fraction (over_sampling) of the resolution
             self.dr = DeltaXY/over_sampling 
@@ -54,7 +38,29 @@ class PSF_simulator():
             self.dz = aspect_ratio * self.dr # spatial sampling in z
         else: 
             self.dz = kwargs['dz']
-
+        
+        # Calculate number of points to show to the user
+        self.Nxy_show = int(fov_xy//self.dr) # Divide by 1000 to transform from nm to um since wavelength is in um
+        self.Nz_show = int(fov_z//self.dz) # Divide by 1000 to transform from nm to um since wavelength is in um
+        
+        # The number of points must be odd so that the center pixel corresponds the the (0,0,0) coordinates
+        if self.Nxy_show % 2 == 0: self.Nxy_show += 1
+        if self.Nz_show % 2 == 0: self.Nz_show += 1
+        print(f"{self.Nxy_show=}, {self.Nz_show=}")
+        print(f"{self.dz=}, {self.dr=}")
+        # The internal calculation is always done at a higher resolution
+        self.Nxy = 251
+        self.Nz = 51
+        
+        # We make the fov to show not to be greater than the one we calculate
+        # if self.Nxy_show >= self.Nxy: self.Nxy = self.Nxy_show
+        # if self.Nz_show >= self.Nz: self.Nz = self.Nz_show
+        
+        self.NA = NA # Numerical aperture
+        self.n = n # refraction index at the object
+        self.wavelength = wavelength
+        
+        DeltaXY = wavelength/2/NA # Diffraction limited transverse resolution
         self.generate_kspace()
         
     def re_init(self,*args,**kwargs):
@@ -71,7 +77,7 @@ class PSF_simulator():
         # x = y = fftshift(fftfreq(Npixels, dk))
         self.x = self.y = self.dr * (np.arange(self.Nxy) - self.Nxy // 2)
         self.z = self.dz * (np.arange(self.Nz) - self.Nz // 2)
-                
+        
         self.k = self.n/self.wavelength # wavenumber
         self.k_cut_off = self.NA/self.wavelength # cut off frequency in the coherent case
         
@@ -323,6 +329,16 @@ class PSF_simulator():
             PSF = np.abs(ASF)**2 # Point Spread Function
             
             self.PSF3D[idx,:,:] = PSF
+        
+        # self.crop_psf()
+    
+    def crop_psf(self):
+        '''Crops the resulting field so that only the portion requested by the user is shown'''
+        self.PSF3D = self.PSF3D[(self.Nz-self.Nz_show)//2:(self.Nz+self.Nz_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2] # The indexes will be integers since both N_show and N are odd
+        print(f"{(self.Nz-self.Nz_show)//2=}")
+        print(f"{(self.Nz+self.Nz_show)//2=}")
+        print(f"{(self.Nxy-self.Nxy_show)//2=}")
+        print(f"{(self.Nxy+self.Nxy_show)//2=}")
        
     def calculateRMS(self):
         '''calculates the RMS wavefron error

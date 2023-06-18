@@ -212,13 +212,13 @@ class Psf_widget(QWidget):
         self.wavelength = Setting(name='wavelength', dtype=float, initial=0.532,
                           unit = '\u03BCm', spinbox_decimals = 3, 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.Nxy = Setting(name='Nxy', dtype=int, initial=51, vmin=1, vmax = 4095,
+        self.fov_xy = Setting(name='FOV xy', dtype=float, initial=1.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.Nz = Setting(name='Nz', dtype=int, initial=3, vmin = 1, vmax = 4095,
+        self.fov_z = Setting(name='FOV z', dtype=float, initial=1.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dz = Setting(name='dz', dtype=float, initial=0.50, unit = '\u03BCm',
+        self.dz = Setting(name='dz', dtype=float, initial=0.05, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         
     
@@ -226,7 +226,7 @@ class Psf_widget(QWidget):
         """Starts the base simulator, using scalar propagation
         """
         self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
-                        self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
+                        self.fov_xy.val , self.fov_z.val, dr = self.dxy.val, dz = self.dz.val)
     
 
     def reinitialize_simulator(self):
@@ -238,13 +238,13 @@ class Psf_widget(QWidget):
         
         if selected_generator is PyFocusSimulator:
             self.gen = selected_generator(NA=self.NA.val, n=self.n.val, wavelength=self.wavelength.val, lens_aperture=self.lens_aperture.val,
-                                Nxy=self.Nxy.val , Nz=self.Nz.val, dr=self.dxy.val, dz=self.dz.val,
+                                fov_xy=self.fov_xy.val , fov_z=self.fov_z.val, dr=self.dxy.val, dz=self.dz.val,
                                 gamma = self.gamma, beta = self.beta,
                                 incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
             self.add_vectorial_aberration() 
         elif selected_generator is PSF_simulator:
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
-                                self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
+                                self.fov_xy.val , self.fov_z.val, dr = self.dxy.val, dz = self.dz.val)
             self.add_scalar_aberration() 
     
 
@@ -322,8 +322,8 @@ class Psf_widget(QWidget):
             if self.plot_checkbox.checkState():
                 self.gen.plot_psf_profile()
             
-            posxy = self.Nxy.val // 2
-            posz = self.Nz.val // 2
+            posxy = self.fov_xy.val // 2
+            posz = self.fov_z.val // 2
             self.viewer.dims.set_point(axis=[0,1,2], value=(0,0,0)) #raises ValueError in napari versions <0.4.13
             self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
             
@@ -342,8 +342,8 @@ class Psf_widget(QWidget):
        #print(deltaZ)
        #print('paraxial:', 2*self.n.val* self.wavelength.val/ self.NA.val**2)
        
-       posxy = self.Nxy.val//2
-       posz = self.Nz.val//2
+       posxy = self.fov_xy.val//2
+       posz = self.fov_z.val//2
        center = np.array([posz,posxy,posxy])
        deltar = deltaR/self.dxy.val
        deltaz = deltaZ/self.dz.val
@@ -364,7 +364,7 @@ class Psf_widget(QWidget):
                            center+np.array([-deltaz, 0, deltar])]
                           )
        
-       if (self.dz.val*self.Nz.val)/2 > deltaZ:
+       if (self.dz.val*self.fov_z.val)/2 > deltaZ:
            ellipses = [bbox_yx, bbox_zy, bbox_zx]
        else:
            ellipses = [bbox_yx]
@@ -389,8 +389,8 @@ class Psf_widget(QWidget):
             im_xz = np.amax(PSF, axis=1)
             text = 'mip'
         else:
-            Nz,Ny,Nx = PSF.shape
-            im_xy = PSF[Nz//2,:,:]
+            fov_z,Ny,Nx = PSF.shape
+            im_xy = PSF[fov_z//2,:,:]
             im_xz = PSF[:,Ny//2,:]
             text = 'plane'
             

@@ -3,6 +3,7 @@ from qtpy.QtWidgets import QCheckBox
 from ..psf_submodules.gui_utils import Setting, SwitchableSection
 
 class PyFocusSettingsHandler:
+    '''Auxiliary class for generating the combo boxes for amplitude, polariation and aberrations'''
     pyfocus_amplitudes = Enum('py_amplitude', 
                         {"Uniform": 0,
                         "Gaussian": 1

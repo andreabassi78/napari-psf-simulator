@@ -55,9 +55,9 @@ class Psf_widget(QWidget):
                         })
     }
     
-    # Default internal values for psf_generator
-    Nxy = 201
-    Nz = 201
+    # Default internal values for psf_generator for the resolution of the calculation
+    Nxy_scalar = 201
+    Nz_scalar = 201
     
     def __init__(self, napari_viewer,
                  ):
@@ -222,16 +222,16 @@ class Psf_widget(QWidget):
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dz = Setting(name='dz', dtype=float, initial=0.05, unit = '\u03BCm',
+        self.dz = Setting(name='dz', dtype=float, initial=0.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         
     
     def start_base_simulator(self):
         """Starts the base simulator, using scalar propagation
         """
-        self._calculate_N_for_scalar_calculation()
+        self._calculate_matrix_dimensions()
         self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
-                            self.Nxy , self.Nz, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
+                            self.Nxy_scalar , self.Nz_scalar, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
     
 
     def reinitialize_simulator(self):
@@ -240,21 +240,21 @@ class Psf_widget(QWidget):
         Sets the current aberration type.
         '''
         selected_generator = self.generator_section.combo.current_data
+        self._calculate_matrix_dimensions()
         
         if selected_generator is PyFocusSimulator:
             self.gen = selected_generator(NA=self.NA.val, n=self.n.val, wavelength=self.wavelength.val, lens_aperture=self.lens_aperture.val,
-                                fov_xy=self.fov_xy.val , fov_z=self.fov_z.val, dr=self.dxy.val, dz=self.dz.val,
+                                Nxy=self.Nxy_show , Nz=self.Nz_show, dr=self.dxy.val, dz=self.dz.val,
                                 gamma = self.gamma, beta = self.beta,
                                 incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
             self.add_vectorial_aberration() 
         elif selected_generator is PSF_simulator:
-            self._calculate_N_for_scalar_calculation()
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
-                                self.Nxy , self.Nz, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
+                                self.Nxy_scalar , self.Nz_scalar, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
             self.add_scalar_aberration() 
     
-    def _calculate_N_for_scalar_calculation(self):
-        """Calculates the dimmensions of the field to show to the user a cropped field, since the field done in the calculation is bigger
+    def _calculate_matrix_dimensions(self):
+        """Calculates the dimmensions of the field to show. For scalar approximation, this is usefull since the calculation is done internally with a bigger number of divisions
         Note: This pass should be performed by the psf_generator, but I was unable to perform it there since the field returned was null for certain values of Nxy and Nz and the cause was not found
         """
         self.Nxy_show = int(self.fov_xy.val//self.dxy.val)
@@ -263,8 +263,8 @@ class Psf_widget(QWidget):
         if self.Nxy_show % 2 == 0: self.Nxy_show += 1
         if self.Nz_show % 2 == 0: self.Nz_show += 1
         # We make the fov to show not to be greater than the one we calculate
-        if self.Nxy_show >= self.Nxy: self.Nxy = self.Nxy_show
-        if self.Nz_show >= self.Nz: self.Nz = self.Nz_show
+        if self.Nxy_show >= self.Nxy_scalar: self.Nxy_scalar = self.Nxy_show
+        if self.Nz_show >= self.Nz_scalar: self.Nz_scalar = self.Nz_show
         print(f"{self.Nz_show=}, {self.Nxy_show=}")
 
     def add_vectorial_aberration(self): # TODO

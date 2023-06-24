@@ -218,7 +218,7 @@ class Psf_widget(QWidget):
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.fov_xy = Setting(name='FOV xy', dtype=float, initial=1.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.fov_z = Setting(name='FOV z', dtype=float, initial=4.0, unit = '\u03BCm',
+        self.fov_z = Setting(name='FOV z', dtype=float, initial=3.0, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
                           layout = settings_layout, write_function = self.reinitialize_simulator)

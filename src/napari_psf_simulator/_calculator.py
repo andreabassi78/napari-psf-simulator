@@ -47,19 +47,17 @@ def calculate(viewer: napari.Viewer,
     @thread_worker(connect={'returned': update_layer})
     def _calculate(first_data,second_data, operation):
             calculate.enabled = False
-            if first_data is not None :
-                if operation.name == 'square':
+            if operation.name == 'square':
                     result = np.power(first_data, 2)
-                elif operation.name == 'multiply':
-                    if second_data is not None:        
-                        result = np.multiply(first_data, second_data)
-                elif operation.name == 'convolve':
-                    if second_data is not None:
-                        result = convolve(first_data, second_data)
+            elif operation.name == 'multiply':
+                    result = np.multiply(first_data, second_data)
+            elif operation.name == 'convolve':
+                    result = convolve(first_data, second_data)
             calculate.enabled = True
             return result
     
-    _calculate(first_layer.data,second_layer.data,operation)
+    if first_layer is not None and second_layer is not None: 
+        _calculate(first_layer.data,second_layer.data,operation)
     
     
     

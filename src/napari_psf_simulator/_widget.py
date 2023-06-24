@@ -218,7 +218,7 @@ class Psf_widget(QWidget):
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.fov_xy = Setting(name='FOV xy', dtype=float, initial=1.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.fov_z = Setting(name='FOV z', dtype=float, initial=3.5, unit = '\u03BCm',
+        self.fov_z = Setting(name='FOV z', dtype=float, initial=4.0, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
@@ -265,7 +265,7 @@ class Psf_widget(QWidget):
         # We make the fov to show not to be greater than the one we calculate
         if self.Nxy_show >= self.Nxy_scalar: self.Nxy_scalar = self.Nxy_show
         if self.Nz_show >= self.Nz_scalar: self.Nz_scalar = self.Nz_show
-        print(f"{self.Nz_show=}, {self.Nxy_show=}")
+        #print(f"{self.Nz_show=}, {self.Nxy_show=}")
 
     def add_vectorial_aberration(self): # TODO
         '''

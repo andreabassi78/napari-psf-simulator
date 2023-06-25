@@ -14,19 +14,23 @@ from enum import Enum
 from functools import partial
 # from napari.qt.threading import thread_worker
 
+@partial
 def calculate_widefield(**kwargs):
     psf_det = kwargs['psf_det']
     return 1*psf_det
 
+@partial
 def calculate_confocal(**kwargs):
     psf_ill = kwargs['psf_ill']
     psf_det = kwargs['psf_det']
     return psf_ill*psf_det
 
+@partial
 def calculate_2p(**kwargs):
     psf_ill = kwargs['psf_ill']
     return psf_ill**2
 
+@partial
 def calculate_sted(**kwargs):
     psf_ill = kwargs['psf_ill']
     psf_sted = kwargs['psf_sted']
@@ -38,13 +42,14 @@ def calculate_sted(**kwargs):
 class Microscope(Enum):
     """
     Enum with microscopes types used for selecting microscope in the combobox of the napari widget
-    Each microscope type is associated to a function (e.g. partial(calculate_widefield)) .
+    Each microscope type is associated to a function (e.g. calculate_widefield).
+    Note that this has to be decorated with partial to be recognised as a member of the Enum).
     The boolean values indicate which ui boxes to show in the napari widget (see _on_microscope_changed function).
     """
-    widefield = ( partial(calculate_widefield), False,True,False,False ) 
-    confocal = ( partial(calculate_confocal), True,False,True,True )
-    two_photons = ( partial(calculate_2p), True,False,False,False )
-    sted = ( partial(calculate_sted), True,False,True,True )
+    widefield = ( calculate_widefield, False,True,False,False ) 
+    confocal = ( calculate_confocal, True,False,True,True )
+    two_photons = ( calculate_2p, True,False,False,False )
+    sted = ( calculate_sted, True,False,True,True )
     def __new__(cls, *values):
         obj = object.__new__(cls)
         obj.function = values[0]
@@ -62,12 +67,11 @@ def calc_init(calc_widget: FunctionGui):
         calc_widget.detection_psf.visible = microscope.detection_visible
         calc_widget.sted_psf.visible = microscope.sted_visible
         calc_widget.saturation_ratio.visible = microscope.saturation_visible
-
-        
+    
 @magic_factory(widget_init=calc_init,
                call_button="Calculate",
                sted_psf={"visible":False},
-               saturation_ratio={"visible":False, "min":1e-9, "max":1e9, "step":0.1}) 
+               saturation_ratio={"visible":False, "min":0.0, "max":np.Inf, "step":0.1}) 
 def calculate(viewer: napari.Viewer,
             illumination_psf: Image,
             detection_psf: Image,
@@ -93,10 +97,8 @@ def calculate(viewer: napari.Viewer,
                                 psf_sted = sted_psf.data,
                                 sat_ratio = saturation_ratio)
 
-        viewer.add_image(result, 
+        layer = viewer.add_image(result, 
                         scale = illumination_psf.scale,
                         colormap = 'twilight',
                         name = microscope.name)
-    
-    
     

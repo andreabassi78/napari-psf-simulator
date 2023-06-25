@@ -345,7 +345,7 @@ class Psf_widget(QWidget):
             posz = self.Nz_show // 2
             self.viewer.dims.set_point(axis=[0,1,2], value=(0,0,0)) #raises ValueError in napari versions <0.4.13
             self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
-            
+            self.viewer.dims.axis_labels = ["z", "y","x"]
             
         worker = generator()  # create "worker" object
         worker.returned.connect(update_image)  # connect callback functions

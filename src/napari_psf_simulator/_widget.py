@@ -317,7 +317,7 @@ class Psf_widget(QWidget):
             #self.viewer.dims.current_step = (0,0,0)
             
             psf_layer = self.viewer.add_image(psf,
-                             name=self.gen.write_name(basename = 'I'),
+                             name=self.gen.write_name(basename = 'Intensity'),
                              colormap='twilight')
             self.rescaleZ(psf_layer)
             

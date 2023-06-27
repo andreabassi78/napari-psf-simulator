@@ -265,7 +265,6 @@ class Psf_widget(QWidget):
         # We make the fov to show not to be greater than the one we calculate
         if self.Nxy_show >= self.Nxy_scalar: self.Nxy_scalar = self.Nxy_show
         if self.Nz_show >= self.Nz_scalar: self.Nz_scalar = self.Nz_show
-        #print(f"{self.Nz_show=}, {self.Nxy_show=}")
 
     def add_vectorial_aberration(self): # TODO
         '''
@@ -323,15 +322,15 @@ class Psf_widget(QWidget):
             
             if self.generator_section.combo.current_data == PyFocusSimulator and self.pyFocus_component_checkbox.checkState():
                 x_layer = self.viewer.add_image(np.abs(self.gen.field.Ex)**2,
-                                name=self.gen.write_name(basename = 'Ex'),
+                                name=self.gen.write_name(basename = 'Ix'),
                                 colormap='gray')
                 self.rescaleZ(x_layer)
                 y_layer = self.viewer.add_image(np.abs(self.gen.field.Ey)**2,
-                                name=self.gen.write_name(basename = 'Ey'),
+                                name=self.gen.write_name(basename = 'Iy'),
                                 colormap='gray')
                 self.rescaleZ(y_layer)
                 z_layer = self.viewer.add_image(np.abs(self.gen.field.Ez)**2,
-                                name=self.gen.write_name(basename = 'Ez'),
+                                name=self.gen.write_name(basename = 'Iz'),
                                 colormap='gray')
                 self.rescaleZ(z_layer)
             

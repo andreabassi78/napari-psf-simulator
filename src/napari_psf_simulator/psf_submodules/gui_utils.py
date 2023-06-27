@@ -28,7 +28,8 @@ class Setting():
                  unit = '',
                  layout = None,
                  write_function = None,
-                 read_function = None):
+                 read_function = None,
+                 read_only = False):
         '''
         Parameters
         ----------
@@ -56,6 +57,8 @@ class Setting():
             Function/method that is executed on value change of the QWidget
         read_function : function or method
             not implemented
+        read_only : bool
+            wether the setting is read only (can not be changed by the user) or not (can be changed by the user)
 
         '''
         self.name= name
@@ -66,7 +69,7 @@ class Setting():
         self.unit = unit
         self.write_function = write_function
         # self.read_function = read_function
-        self.create_spin_box(layout, dtype, vmin, vmax, unit, width)
+        self.create_spin_box(layout, dtype, vmin, vmax, unit, width, read_only)
         
     def __repr__(self):
         return f'{self.name} : {self._val}'
@@ -82,7 +85,7 @@ class Setting():
         self.set_func(new_val)
         self._val = new_val
         
-    def create_spin_box(self, layout, dtype, vmin, vmax, unit, width):
+    def create_spin_box(self, layout, dtype, vmin, vmax, unit, width, read_only):
         name = self.name
         val = self._val
         if dtype == int:
@@ -118,6 +121,7 @@ class Setting():
         
         else: raise(TypeError('Specified setting type not supported'))
         
+        sbox.setReadOnly(read_only)
         self.set_func(val)
         if self.write_function is not None:
             change_func.connect(self.write_function)

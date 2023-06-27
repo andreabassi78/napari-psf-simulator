@@ -6,12 +6,14 @@ class PyFocusSettingsHandler:
     '''Auxiliary class for generating the combo boxes for amplitude, polariation and aberrations'''
     pyfocus_amplitudes = Enum('py_amplitude', 
                         {"Uniform": 0,
-                        "Gaussian": 1
+                        "Gaussian": 1,
+                        "Custom": 2
                         })
 
     pyfocus_phases = Enum('py_phase', 
                         {"Uniform": 0,
-                        "Vortex": 1
+                        "Vortex": 1,
+                        "Custom": 2
                         })
 
     pyfocus_polarizations = Enum('py_polarization', 
@@ -38,6 +40,7 @@ class PyFocusSettingsHandler:
         self.widget.add_splitter(layout, 'Pyfocus settings')
         self.widget.pyFocus_component_checkbox = QCheckBox("show x,y,z intensities")
         self.widget.pyFocus_component_checkbox.setChecked(False)
+        
         layout.addWidget(self.widget.pyFocus_component_checkbox)
         self.widget.lens_aperture = Setting(name='lens radius', dtype=float, initial=3, unit='mm', 
                             layout = layout, write_function = self.widget.reinitialize_simulator)
@@ -45,14 +48,23 @@ class PyFocusSettingsHandler:
         self.widget.amplitude_section = SwitchableSection(name = 'amplitude',
                                         baselayout = layout, choices = self.pyfocus_amplitudes,
                                         on_change_function = self.change_amplitude)
+        self.change_amplitude()
         self.widget.phase_section = SwitchableSection(name = 'phase',
                                         baselayout = layout, choices = self.pyfocus_phases,
                                         on_change_function = self.change_phase)
+        self.change_phase()
+        
         self.widget.add_splitter(layout, 'Polarization')
         self.widget.polarization_section = SwitchableSection(name = 'polarization',
                                         baselayout = layout, choices = self.pyfocus_polarizations,
                                         on_change_function = self.change_polarization)
+        self.change_polarization()
 
+    def _add_polarization_settings(self, initial_gamma, initial_beta, read_only):
+            self.widget.gamma_setting = Setting(name='gamma', dtype=float, initial=initial_gamma, unit='deg', 
+                            layout = self.widget.polarization_section.sub_layout, write_function = self.set_polarization, read_only=read_only)
+            self.widget.beta_setting = Setting(name='beta', dtype=float, initial=initial_beta, unit='deg',
+                            layout = self.widget.polarization_section.sub_layout, write_function = self.set_polarization, read_only=read_only)
 
     def set_polarization(self):
         self.widget.gamma = self.widget.gamma_setting.val
@@ -62,34 +74,27 @@ class PyFocusSettingsHandler:
     def change_polarization(self):
         self.widget.polarization_section.remove_sub_layout_content()
         if self.widget.polarization_section.combo.text == "X linear":
-            self.widget.gamma = 0
-            self.widget.beta = 0
-            self.widget.reinitialize_simulator()
+            self._add_polarization_settings(0,0,True)
         elif self.widget.polarization_section.combo.text == "Y linear":
-            self.widget.gamma = 90
-            self.widget.beta = 0
-            self.widget.reinitialize_simulator()
+            self._add_polarization_settings(90,0,True)
         elif self.widget.polarization_section.combo.text == "Right handed circular":
-            self.widget.gamma = 45
-            self.widget.beta = 90
-            self.widget.reinitialize_simulator()
+            self._add_polarization_settings(45,90,True)
         elif self.widget.polarization_section.combo.text == "Left handed circular":
-            self.widget.gamma = 45
-            self.widget.beta = -90
-            self.widget.reinitialize_simulator()
+            self._add_polarization_settings(45,-90,True)
         elif self.widget.polarization_section.combo.text == "Custom":
-            self.widget.gamma_setting = Setting(name='gamma', dtype=float, initial=45, unit='deg', 
-                            layout = self.widget.polarization_section.sub_layout, write_function = self.set_polarization)
-            self.widget.beta_setting = Setting(name='beta', dtype=float, initial=90, unit='deg',
-                            layout = self.widget.polarization_section.sub_layout, write_function = self.set_polarization)
-            self.set_polarization()
+            self._add_polarization_settings(45,90,False)
         else:
             raise Exception(f"Combo text for polarization has a wrong value: {self.widget.polarization_section.combo.text}")
+        self.set_polarization()
 
     def set_gaussian_amplitude(self):
         self.widget.custom_amplitude = f'np.exp(-(rho/{self.widget.waist.val*1000000})**2/2)' # The *1000000 factor comes from a passage from mm to nm
         self.widget.reinitialize_simulator()
-
+    
+    def set_custom_amplitude(self):
+        self.widget.custom_amplitude = self.widget.custom_amplitude_setting.val
+        self.widget.reinitialize_simulator()
+    
     def change_amplitude(self):
         self.widget.amplitude_section.remove_sub_layout_content()
         if self.widget.amplitude_section.combo.text == 'Uniform':
@@ -100,6 +105,10 @@ class PyFocusSettingsHandler:
                         layout = self.widget.amplitude_section.sub_layout,
                         write_function = self.set_gaussian_amplitude)
             self.set_gaussian_amplitude()
+        elif self.widget.amplitude_section.combo.text == 'Custom':
+            self.widget.custom_amplitude_setting = Setting(name='A(rho, phi)', dtype=str, initial='1', 
+                            layout = self.widget.amplitude_section.sub_layout, write_function = self.set_custom_amplitude)
+            self.set_custom_amplitude()
         else:
             raise Exception(f"Combo text for amplitude has a wrong value: {self.widget.amplitude_section.combo.text}")
 
@@ -107,6 +116,10 @@ class PyFocusSettingsHandler:
         self.widget.custom_phase = self.widget.custom_mask = f'phi*{int(self.widget.order.val)}'
         self.widget.reinitialize_simulator()
         
+    def set_custom_phase_mask(self):
+        self.widget.custom_phase = self.widget.custom_mask = self.widget.custom_phase_setting.val
+        self.widget.reinitialize_simulator()
+
     def change_phase(self):
         self.widget.phase_section.remove_sub_layout_content()
         if self.widget.phase_section.combo.text == 'Uniform':
@@ -117,5 +130,9 @@ class PyFocusSettingsHandler:
                         layout = self.widget.phase_section.sub_layout,
                         write_function = self.set_vortex_phase_mask)
             self.set_vortex_phase_mask()
+        elif self.widget.phase_section.combo.text == 'Custom':
+            self.widget.custom_phase_setting = Setting(name='\u03B8(rho, phi)', dtype=str, initial='1', 
+                            layout = self.widget.phase_section.sub_layout, write_function = self.set_custom_phase_mask)
+            self.set_custom_phase_mask()
         else:
             raise Exception(f"Combo text for phase has a wrong value: {self.widget.phase_section.combo.text}")

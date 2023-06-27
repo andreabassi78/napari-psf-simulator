@@ -46,8 +46,8 @@ class Microscope(Enum):
     Note that this has to be decorated with partial to be recognised as a member of the Enum).
     The boolean values indicate which ui boxes to show in the napari widget (see _on_microscope_changed function).
     """
-    widefield = ( calculate_widefield, False,True,False,False ) 
     confocal = ( calculate_confocal, True,False,True,True )
+    widefield = ( calculate_widefield, False,True,False,False ) 
     two_photons = ( calculate_2p, True,False,False,False )
     sted = ( calculate_sted, True,False,True,True )
     def __new__(cls, *values):
@@ -61,23 +61,24 @@ class Microscope(Enum):
 
 
 def calc_init(calc_widget: FunctionGui):
-    @calc_widget.microscope.changed.connect
-    def _on_microscope_changed(microscope: Microscope):
-        calc_widget.illumination_psf.visible = microscope.illumination_visible
-        calc_widget.detection_psf.visible = microscope.detection_visible
-        calc_widget.sted_psf.visible = microscope.sted_visible
-        calc_widget.saturation_ratio.visible = microscope.saturation_visible
+    @calc_widget.microscope_type.changed.connect
+    def _on_microscope_changed(microscope_type: Microscope):
+        calc_widget.illumination_psf.visible = microscope_type.illumination_visible
+        calc_widget.detection_psf.visible = microscope_type.detection_visible
+        calc_widget.sted_psf.visible = microscope_type.sted_visible
+        calc_widget.saturation_ratio.visible = microscope_type.saturation_visible
     
 @magic_factory(widget_init=calc_init,
                call_button="Calculate",
                sted_psf={"visible":False},
                saturation_ratio={"visible":False, "min":0.0, "max":np.Inf, "step":0.1}) 
 def calculate(viewer: napari.Viewer,
+            microscope_type: Microscope,  
             illumination_psf: Image,
             detection_psf: Image,
             sted_psf: Image,
             saturation_ratio: float = 10,
-            microscope: Microscope = Microscope.confocal,
+            
             ):
     '''
     Calculates the PSF of  microscopes starting from the illumination and detection PSF.
@@ -91,7 +92,7 @@ def calculate(viewer: napari.Viewer,
         Physical Review Letters 98, 143903, (2005)
     '''
     if illumination_psf is not None:
-        psf_function = microscope.function
+        psf_function = microscope_type.function
         result = psf_function(psf_ill = illumination_psf.data,
                                 psf_det = detection_psf.data,
                                 psf_sted = sted_psf.data,
@@ -100,5 +101,5 @@ def calculate(viewer: napari.Viewer,
         layer = viewer.add_image(result, 
                         scale = illumination_psf.scale,
                         colormap = 'twilight',
-                        name = microscope.name)
+                        name = microscope_type.name)
     

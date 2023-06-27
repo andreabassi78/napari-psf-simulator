@@ -336,7 +336,9 @@ class PSF_simulator():
     def crop_psf(self):
         '''Crops the resulting field so that only the portion requested by the user is shown'''
         self.PSF3D = self.PSF3D[(self.Nz-self.Nz_show)//2:(self.Nz+self.Nz_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2] # The indexes will be integers since both N_show and N are odd
-       
+        self.x = self.x[(self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2]
+        self.z = self.z[(self.Nz-self.Nz_show)//2:(self.Nz+self.Nz_show)//2]
+                
     def calculateRMS(self):
         '''calculates the RMS wavefron error
         For Zernike abberrations it is the weight of the 
@@ -494,6 +496,7 @@ class PSF_simulator():
         fig.suptitle(sup_title, size=char_size*0.8)
         PSF = self.PSF3D
         Nz, Ny, Nx = PSF.shape
+        print(Nz, Ny, Nx)
     
         # psf_to_show = PSF.take(indices=Nlist[idx]//2 , axis=idx)
         psf_to_show_x = PSF[Nz//2,Ny//2,:]

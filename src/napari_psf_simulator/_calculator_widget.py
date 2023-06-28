@@ -12,6 +12,7 @@ from magicgui.widgets import FunctionGui
 from magicgui import magic_factory
 from enum import Enum
 from functools import partial
+from scipy.ndimage import convolve
 # from napari.qt.threading import thread_worker
 
 @partial
@@ -103,3 +104,19 @@ def calculate(viewer: napari.Viewer,
                         colormap = 'twilight',
                         name = microscope_type.name)
     
+
+    
+@magic_factory(call_button="Convolve",
+               mode={"choices": ['wrap', 'constant', 'nearest', 'mirror', 'reflect']},)
+def convolution(viewer: napari.Viewer,
+            sample: Image,  
+            psf: Image,
+            mode: str
+            ):
+    if sample is not None and psf is not None:
+        result = convolve(sample.data,psf.data)#,mode=mode)
+
+        layer = viewer.add_image(result, 
+                        scale = sample.scale,
+                        colormap = 'twilight',
+                        name = 'image')

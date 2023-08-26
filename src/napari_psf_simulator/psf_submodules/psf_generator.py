@@ -5,6 +5,7 @@ Created on Tue Feb 23 17:02:23 2021
 @author: Andrea Bassi
 """
 
+from ...napari_psf_simulator.psf_submodules.normalize_intensity import calculate_normalizing_factor
 import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
 from warnings import warn
@@ -16,7 +17,7 @@ class PSF_simulator():
     with different pupils and various abberrations. 
     '''
     
-    def __init__(self, NA=0.5, n=1, wavelength=0.532, Nxy=127, Nz=3, **kwargs):
+    def __init__(self, NA=0.5, n=1, wavelength=0.532, Nxy=127, Nz=3, lens_aperture=3, **kwargs):
         '''
         NA: numerical aperture
         n: refractive index
@@ -52,6 +53,7 @@ class PSF_simulator():
         self.NA = NA # Numerical aperture
         self.n = n # refraction index at the object
         self.wavelength = wavelength
+        self.lens_aperture = lens_aperture
         
         DeltaXY = wavelength/2/NA # Diffraction limited transverse resolution
         self.generate_kspace()
@@ -332,7 +334,15 @@ class PSF_simulator():
         
         if self.Nxy_show and self.Nz_show:
             self.crop_psf()
-    
+        
+        # Normalize based on conservation of energy
+        self.normalize_psf()
+        
+    def normalize_psf(self):
+        normalizing_factor = calculate_normalizing_factor(self.PSF3D, max(self.x), max(self.x), self.lens_aperture*1000000)
+        print(f"{normalizing_factor=}")
+        self.PSF3D*=normalizing_factor
+        
     def crop_psf(self):
         '''Crops the resulting field so that only the portion requested by the user is shown'''
         self.PSF3D = self.PSF3D[(self.Nz-self.Nz_show)//2:(self.Nz+self.Nz_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2] # The indexes will be integers since both N_show and N are odd

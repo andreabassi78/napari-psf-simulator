@@ -270,7 +270,7 @@ class Psf_widget(QWidget):
         if self.Nxy_show >= self.Nxy_scalar: self.Nxy_scalar = self.Nxy_show
         if self.Nz_show >= self.Nz_scalar: self.Nz_scalar = self.Nz_show
 
-    def add_vectorial_aberration(self): # TODO
+    def add_vectorial_aberration(self):
         '''
         Adds the effect of a phase aberration
         '''  

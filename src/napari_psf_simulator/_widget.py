@@ -224,6 +224,9 @@ class Psf_widget(QWidget):
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.dz = Setting(name='dz', dtype=float, initial=0.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
+        self.lens_aperture = Setting(name='lens radius', dtype=float, initial=3, unit='mm', 
+                            layout = settings_layout, write_function = self.reinitialize_simulator)
+
         
     
     def start_base_simulator(self):

@@ -42,8 +42,6 @@ class PyFocusSettingsHandler:
         self.widget.pyFocus_component_checkbox.setChecked(False)
         
         layout.addWidget(self.widget.pyFocus_component_checkbox)
-        self.widget.lens_aperture = Setting(name='lens radius', dtype=float, initial=3, unit='mm', 
-                            layout = layout, write_function = self.widget.reinitialize_simulator)
         
         self.widget.add_splitter(layout, 'Field settings')
         self.widget.amplitude_section = SwitchableSection(name = 'amplitude',

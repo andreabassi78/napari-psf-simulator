@@ -133,9 +133,9 @@ class Psf_widget(QWidget):
         if selected_generator is PSF_simulator:
             pass
         elif selected_generator is PyFocusSimulator:
-            settings_handler = PyFocusSettingsHandler(widget = self)
-            settings_handler.setup_pyfocus_default_settings_values()
-            settings_handler.add_PyFocus_settings(self.generator_section.sub_layout)
+            self.settings_handler = PyFocusSettingsHandler(widget = self)
+            self.settings_handler.setup_pyfocus_default_settings_values()
+            self.settings_handler.add_PyFocus_settings(self.generator_section.sub_layout)
         self.add_splitter(self.generator_section.sub_layout,'Aberrations', color=(2,10,10))
         self.aberration_section = SwitchableSection(name = 'Aberrations',
                                     baselayout = self.generator_section.sub_layout, choices = self.aberrations[self.generator_section.combo.current_data],
@@ -247,6 +247,7 @@ class Psf_widget(QWidget):
                                 Nxy=self.Nxy_show , Nz=self.Nz_show, dr=self.dxy.val, dz=self.dz.val,
                                 gamma = self.gamma, beta = self.beta,
                                 incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
+            self.settings_handler.set_incident_energy_ratio(self.generator_section.sub_layout)
             self.add_vectorial_aberration() 
         elif selected_generator is PSF_simulator:
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,

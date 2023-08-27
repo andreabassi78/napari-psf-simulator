@@ -6,6 +6,7 @@ Created on Sat Jan 22 00:16:58 2022
 """
 
 from enum import Enum
+from traceback import format_exc
 import numpy as np
 from napari.qt.threading import thread_worker
 from qtpy.QtCore import Qt
@@ -248,10 +249,10 @@ class Psf_widget(QWidget):
         if selected_generator is PyFocusSimulator:
             self.gen = selected_generator(NA=self.NA.val, n=self.n.val, wavelength=self.wavelength.val, lens_aperture=self.lens_aperture.val,
                                 Nxy=self.Nxy_show , Nz=self.Nz_show, dr=self.dxy.val, dz=self.dz.val,
-                                gamma = self.gamma, beta = self.beta,
-                                incident_amplitude = self.custom_amplitude, incident_phase = self.custom_phase)
-            self.settings_handler.set_incident_energy_ratio(self.generator_section.sub_layout)
-            self.add_vectorial_aberration() 
+                                gamma = self.gamma, beta = self.beta, incident_amplitude = self.custom_amplitude, 
+                                incident_phase = self.custom_phase)
+            self.settings_handler.set_incident_energy_ratio()
+            self.add_vectorial_aberration()
         elif selected_generator is PSF_simulator:
             self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
                                 self.Nxy_scalar , self.Nz_scalar, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
@@ -303,6 +304,19 @@ class Psf_widget(QWidget):
             scale[-3] = zscaling
             layer.scale = scale
             
+    def update_incident_energy_ratio(self):
+        if self.generator_section.combo.current_data is PyFocusSimulator:
+            try:
+                if self.set_incident_energy_ratio_to_one.checkState():
+                    self.gen.use_energy_ratio = False # Variable to allow the user to compensate for the inciding energy factor
+                else:
+                    self.gen.use_energy_ratio = True
+            except Exception as e:
+                print(format_exc())
+                print("No se pudo")
+                pass
+        else:
+            print("No")
     
     def calculate_psf(self):
         '''
@@ -313,6 +327,7 @@ class Psf_widget(QWidget):
             import warnings
             warnings.filterwarnings('ignore')
             self.gen.generate_pupil()
+            self.update_incident_energy_ratio()
             self.gen.generate_3D_PSF()
             return self.gen.PSF3D
         

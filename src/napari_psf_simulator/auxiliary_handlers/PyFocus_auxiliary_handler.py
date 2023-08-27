@@ -52,12 +52,13 @@ class PyFocusSettingsHandler:
                                         baselayout = layout, choices = self.pyfocus_phases,
                                         on_change_function = self.change_phase)
         self.change_phase()
-        
+
         self.widget.incident_energy_ratio = Setting(name='Incident energy factor', read_only=True,
-                                        dtype=float, initial=self.widget.gen.incident_energy_ratio,
+                                        dtype=float, initial=self.widget.gen.get_incident_energy_ratio(),
                                         layout = layout, write_function = self.widget.reinitialize_simulator)
         self.widget.set_incident_energy_ratio_to_one = QCheckBox("Normalize incident energy ratio to one")
         self.widget.set_incident_energy_ratio_to_one.setChecked(False)
+        layout.addWidget(self.widget.set_incident_energy_ratio_to_one)
         
         self.widget.add_splitter(layout, 'Polarization')
         self.widget.polarization_section = SwitchableSection(name = 'polarization',
@@ -65,11 +66,10 @@ class PyFocusSettingsHandler:
                                         on_change_function = self.change_polarization)
         self.change_polarization()
     
-    def set_incident_energy_ratio(self, layout):
+    def set_incident_energy_ratio(self):
         try:
-            self.widget.incident_energy_ratio.val = self.widget.gen.incident_energy_ratio
+            self.widget.incident_energy_ratio.val = self.widget.gen.get_incident_energy_ratio()
         except:
-            print("Nope")
             pass
     
     def _add_polarization_settings(self, initial_gamma, initial_beta, read_only):

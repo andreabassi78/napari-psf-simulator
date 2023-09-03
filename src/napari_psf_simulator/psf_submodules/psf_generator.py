@@ -5,7 +5,7 @@ Created on Tue Feb 23 17:02:23 2021
 @author: Andrea Bassi
 """
 
-from ...napari_psf_simulator.psf_submodules.normalize_intensity import calculate_normalizing_factor
+from .normalize_intensity import calculate_normalizing_factor
 import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
 from warnings import warn

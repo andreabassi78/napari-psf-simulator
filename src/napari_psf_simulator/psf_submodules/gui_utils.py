@@ -4,7 +4,9 @@ Created on Tue Jan 25 16:34:41 2022
 
 @author: Andrea Bassi @ Polimi
 """
-from qtpy.QtWidgets import QLabel, QFormLayout, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox
+from qtpy.QtWidgets import (QLabel, QFormLayout, QSpinBox,
+                            QDoubleSpinBox, QCheckBox, QComboBox,
+                            QLineEdit, QSplitter, QVBoxLayout)
 from qtpy.QtCore import Qt
 from enum import Enum, EnumMeta
 
@@ -26,7 +28,8 @@ class Setting():
                  unit = '',
                  layout = None,
                  write_function = None,
-                 read_function = None):
+                 read_function = None,
+                 read_only = False):
         '''
         Parameters
         ----------
@@ -54,6 +57,8 @@ class Setting():
             Function/method that is executed on value change of the QWidget
         read_function : function or method
             not implemented
+        read_only : bool
+            wether the setting is read only (can not be changed by the user) or not (can be changed by the user)
 
         '''
         self.name= name
@@ -64,7 +69,7 @@ class Setting():
         self.unit = unit
         self.write_function = write_function
         # self.read_function = read_function
-        self.create_spin_box(layout, dtype, vmin, vmax, unit, width)
+        self.create_spin_box(layout, dtype, vmin, vmax, unit, width, read_only)
         
     def __repr__(self):
         return f'{self.name} : {self._val}'
@@ -80,7 +85,7 @@ class Setting():
         self.set_func(new_val)
         self._val = new_val
         
-    def create_spin_box(self, layout, dtype, vmin, vmax, unit, width):
+    def create_spin_box(self, layout, dtype, vmin, vmax, unit, width, read_only):
         name = self.name
         val = self._val
         if dtype == int:
@@ -108,9 +113,15 @@ class Setting():
             self.set_func = sbox.setChecked
             self.get_func = sbox.checkState
             change_func = sbox.stateChanged
+        elif dtype == str:
+            sbox = QLineEdit()
+            self.set_func = sbox.setText
+            self.get_func = sbox.text
+            change_func = sbox.textChanged
         
         else: raise(TypeError('Specified setting type not supported'))
         
+        sbox.setReadOnly(read_only)
         self.set_func(val)
         if self.write_function is not None:
             change_func.connect(self.write_function)
@@ -209,6 +220,63 @@ class Combo_box():
             combo.currentIndexChanged.connect(self.write_function)
         # combo.setFixedWidth(width)
         self.combo = combo
+
+
+class SwitchableSection:
+    '''
+    Class to manage a section that appears and disappears when a combo box is changed
+    '''
+    def __init__(self,
+                 name,
+                 choices,
+                 baselayout,
+                 on_change_function,
+                 **kwargs):
+                 
+        '''
+        name : str
+            Name of the object and combobox.
+        choices : list(str) or Enum
+            Combobox choices.
+        baselayout : QWidget
+            Parent QWidget layout where the combobox and the corresponding layout will be shown.
+        on_change_function : function or method
+            Function/method that is executed on value change of the combobox
+        '''
+        
+        self.name = name
+        self.choices = choices
+        self.baselayout = baselayout
+        self.on_change_function = on_change_function
+        self.combo = Combo_box(name = name, choices = choices,
+                                layout = baselayout, write_function= on_change_function)
+        self.add_sub_layout()      
+
+    def add_splitter(self, baselayout, title):
+        splitter = QSplitter(Qt.Vertical)
+        baselayout.addWidget(splitter)
+        baselayout.addWidget(QLabel(title))
+
+    def add_sub_layout(self):
+        _layout = QVBoxLayout()
+
+        self.baselayout.addLayout(_layout)
+
+        self.sub_layout = _layout
+
+    def remove_sub_layout_content(self):
+        if hasattr(self, 'sub_layout'):
+            _layout = self.sub_layout
+            def delete_items(layout):
+                if layout is not None:
+                    while layout.count():
+                        item = layout.takeAt(0)
+                        widget = item.widget()
+                        if widget is not None:
+                            widget.setParent(None)
+                        else:
+                            delete_items(item.layout())
+            delete_items(_layout)
 
 
 class BaseEnum(Enum):

@@ -5,6 +5,7 @@ Created on Tue Feb 23 17:02:23 2021
 @author: Andrea Bassi
 """
 
+from .normalize_intensity import calculate_normalizing_factor
 import numpy as np
 from numpy.fft import fft2, ifftshift, fftshift, fftfreq
 from warnings import warn
@@ -16,7 +17,7 @@ class PSF_simulator():
     with different pupils and various abberrations. 
     '''
     
-    def __init__(self, NA=0.5, n=1, wavelength=0.532, Nxy=127, Nz=3, **kwargs):
+    def __init__(self, NA=0.5, n=1, wavelength=0.532, Nxy=127, Nz=3, lens_aperture=3, **kwargs):
         '''
         NA: numerical aperture
         n: refractive index
@@ -27,22 +28,6 @@ class PSF_simulator():
         aspect_ratio: ratio between z and xy sampling
         
         '''
-        if Nxy % 2 == 0:
-            Nxy +=1 
-            warn(f'Number of pixels Nxy must be odd, changed to {Nxy}')
-        if Nz % 2 == 0:
-             Nz +=1 #XY number of pixels must be odd 
-             warn(f'Number of pixels Nz must be odd, changed to {Nz}')
-             
-        self.NA = NA # Numerical aperture
-        self.n = n # refraction index at the object
-        self.wavelength = wavelength
-        
-        self.Nxy = Nxy
-        self.Nz = Nz
-        
-        DeltaXY = wavelength/2/NA # Diffraction limited transverse resolution
-        
         if not 'dr' in kwargs:
             over_sampling = 4 # spatial sampling in xy, chosen to be a fraction (over_sampling) of the resolution
             self.dr = DeltaXY/over_sampling 
@@ -54,8 +39,30 @@ class PSF_simulator():
             self.dz = aspect_ratio * self.dr # spatial sampling in z
         else: 
             self.dz = kwargs['dz']
-
+        
+        if Nxy % 2 == 0:
+            Nxy +=1 
+            warn(f'Number of pixels Nxy must be odd, changed to {Nxy}')
+        if Nz % 2 == 0:
+             Nz +=1 #XY number of pixels must be odd 
+             warn(f'Number of pixels Nz must be odd, changed to {Nz}')
+                
+        self.Nxy = Nxy
+        self.Nz = Nz
+        
+        self.NA = NA # Numerical aperture
+        self.n = n # refraction index at the object
+        self.wavelength = wavelength
+        self.lens_aperture = lens_aperture
+        
+        DeltaXY = wavelength/2/NA # Diffraction limited transverse resolution
         self.generate_kspace()
+        
+        # Argument for croping the resulting field as to only show a portion to the user
+        if 'crop_Ns' in kwargs:
+            self.Nxy_show, self.Nz_show = kwargs['crop_Ns']
+        else:
+            self.Nxy_show = self.Nz_show = None
         
     def re_init(self,*args,**kwargs):
         """
@@ -71,7 +78,7 @@ class PSF_simulator():
         # x = y = fftshift(fftfreq(Npixels, dk))
         self.x = self.y = self.dr * (np.arange(self.Nxy) - self.Nxy // 2)
         self.z = self.dz * (np.arange(self.Nz) - self.Nz // 2)
-                
+        
         self.k = self.n/self.wavelength # wavenumber
         self.k_cut_off = self.NA/self.wavelength # cut off frequency in the coherent case
         
@@ -306,6 +313,7 @@ class PSF_simulator():
         Generates the PSF by Fourier Transforming the Amplitude Tranfer Function
         calculated at different z with the Rayleigh-Sommerfield angular spectrum 
         '''
+        self.PSF3D = np.zeros(((self.Nz,self.Nxy,self.Nxy)))
         
         ATF0 = self.ATF0
         
@@ -323,7 +331,23 @@ class PSF_simulator():
             PSF = np.abs(ASF)**2 # Point Spread Function
             
             self.PSF3D[idx,:,:] = PSF
-       
+        
+        if self.Nxy_show and self.Nz_show:
+            self.crop_psf()
+        
+        # Normalize based on conservation of energy
+        self.normalize_psf()
+        
+    def normalize_psf(self):
+        normalizing_factor = calculate_normalizing_factor(self.PSF3D, max(self.x), max(self.x), self.lens_aperture*1000000)
+        self.PSF3D*=normalizing_factor
+        
+    def crop_psf(self):
+        '''Crops the resulting field so that only the portion requested by the user is shown'''
+        self.PSF3D = self.PSF3D[(self.Nz-self.Nz_show)//2:(self.Nz+self.Nz_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2, (self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2] # The indexes will be integers since both N_show and N are odd
+        self.x = self.x[(self.Nxy-self.Nxy_show)//2:(self.Nxy+self.Nxy_show)//2]
+        self.z = self.z[(self.Nz-self.Nz_show)//2:(self.Nz+self.Nz_show)//2]
+                
     def calculateRMS(self):
         '''calculates the RMS wavefron error
         For Zernike abberrations it is the weight of the 
@@ -481,6 +505,7 @@ class PSF_simulator():
         fig.suptitle(sup_title, size=char_size*0.8)
         PSF = self.PSF3D
         Nz, Ny, Nx = PSF.shape
+        print(Nz, Ny, Nx)
     
         # psf_to_show = PSF.take(indices=Nlist[idx]//2 , axis=idx)
         psf_to_show_x = PSF[Nz//2,Ny//2,:]
@@ -536,6 +561,7 @@ class PSF_simulator():
     def write_name(self, basename =''):
         
         name = '_'.join([basename,
+                        'scalar',
                         f'NA_{self.NA:.1f}',
                         f'n_{self.n:.1f}'])
        

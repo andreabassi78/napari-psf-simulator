@@ -5,6 +5,8 @@ Created on Sat Jan 22 00:16:58 2022
 @author: Andrea Bassi @Polimi
 """
 
+from enum import Enum
+from traceback import format_exc
 import numpy as np
 from napari.qt.threading import thread_worker
 from qtpy.QtCore import Qt
@@ -16,11 +18,11 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from .psf_submodules.aberrations import Aberrations
-from .psf_submodules.gui_utils import Combo_box, Setting
+from qtpy.QtGui import QColor
+from .psf_submodules.gui_utils import Setting, SwitchableSection
 from .psf_submodules.psf_generator import PSF_simulator
-
+from .auxiliary_handlers.PyFocus_auxiliary_handler import PyFocusSettingsHandler
+from PyFocus.napari_adapter.napari_adapter import PyFocusSimulator
 
 class Psf_widget(QWidget):
     '''
@@ -33,23 +35,50 @@ class Psf_widget(QWidget):
     can be added to the UI (Combo_box) with new Settings containing the parameters
     needed to simulate the phase aberrtion.
     For adding aberrations change the self.setup_aberrations() method, 
-    adding a new element to Aberrations as defined in napari_psf_simulator.aberrations
-        
+    adding a new element to Aberrations as defined in napari_psf_simulator.aberrations  
     '''
+    generators = Enum('Gen', 
+                      {"Scalar": PSF_simulator,
+                       "Vectorial": PyFocusSimulator
+                        })
+    
+    aberrations = { # Passing a class as the key to a dictionary might be werid but it works just fine
+        PyFocusSimulator: Enum('Aberrations', 
+                       {"None": 0,
+                        "Interface":1,
+                        "Zernike":2
+                        }),
+        PSF_simulator: Enum('Aberrations',
+                       {"None": 0,
+                        "Slab":1,
+                        "Zernike":2
+                        })
+    }
+    
+    # Default internal values for psf_generator for the resolution of the calculation
+    Nxy_scalar = 201
+    Nz_scalar = 201
     
     def __init__(self, napari_viewer,
                  ):
         self.viewer = napari_viewer
         super().__init__()
+        
+        self.aberration_changer_mapper = {
+            PyFocusSimulator: self.change_vectorial_aberration,
+            PSF_simulator: self.change_scalar_aberration
+        }
         self.setup_ui()
-        self.start_simulator()
-        self.setup_aberration_ui()
         
         
-    def add_section(self, layout, title):
+        
+    def add_splitter(self, layout, title, color = (50,55,55)):
         splitter = QSplitter(Qt.Vertical)
-        layout.addWidget(splitter)
-        layout.addWidget(QLabel(title))
+        layout.addWidget(splitter)      
+        lbl= QLabel(title)
+        col = QColor(*color)
+        lbl.setStyleSheet("QWidget { background-color: %s }" % col.name()) 
+        layout.addWidget(lbl)
     
     
     def setup_ui(self): 
@@ -63,27 +92,113 @@ class Psf_widget(QWidget):
         self.setLayout(layout)
         
         # add Settings
-        self.add_section(layout,'Settings')
+        self.add_splitter(layout,'Settings', color=(2,10,10))
         settings_layout = QVBoxLayout()
         layout.addLayout(settings_layout)
         self.create_base_Settings(settings_layout)
+        self.start_base_simulator()
         
         # add plot results checkbox
         self.plot_checkbox = QCheckBox("Plot PSF profile in Console")
         self.plot_checkbox.setChecked(False)
         layout.addWidget(self.plot_checkbox)
+        
         # add show Airy disk checkbox
         self.airy_checkbox = QCheckBox("Show Airy disk")
-        self.airy_checkbox.setChecked(True)
+        self.airy_checkbox.setChecked(False)
         layout.addWidget(self.airy_checkbox)
-        # add calculate psf button
+
+        # add switchable section for Propagation model (scalar, vectorial)
+        self.add_splitter(layout,'Propagation model', color=(2,10,10))
+        self.generator_section = SwitchableSection(name = 'Model',
+                                      baselayout = layout, choices = self.generators,
+                                      on_change_function = self.change_generator)
+        # add switchable section for aberrations
+        self.add_splitter(self.generator_section.sub_layout,'Aberrations', color=(2,10,10))
+        self.aberration_section = SwitchableSection(name = 'Aberrations',
+                                      baselayout = self.generator_section.sub_layout, choices = self.aberrations[self.generator_section.combo.current_data],
+                                      on_change_function = self.aberration_changer_mapper[self.generator_section.combo.current_data])
+
+        # add PSF calculation section
+        self.add_splitter(layout,'Calculate Point Spread Function',color=(2,10,10))
+        calculate_layout = QVBoxLayout()
+        layout.addLayout(calculate_layout)
         calculate_btn = QPushButton('Calculate PSF')
         calculate_btn.clicked.connect(self.calculate_psf)
-        layout.addWidget(calculate_btn) 
-        
-        self.layout = layout
+        layout.addWidget(calculate_btn)
 
+    def change_generator(self):
+        self.generator_section.remove_sub_layout_content()
+        selected_generator = self.generator_section.combo.current_data
+        if selected_generator is PSF_simulator:
+            pass
+        elif selected_generator is PyFocusSimulator:
+            self.settings_handler = PyFocusSettingsHandler(widget = self)
+            self.settings_handler.setup_pyfocus_default_settings_values()
+            self.settings_handler.add_PyFocus_settings(self.generator_section.sub_layout)
+        self.add_splitter(self.generator_section.sub_layout,'Aberrations', color=(2,10,10))
+        self.aberration_section = SwitchableSection(name = 'Aberrations',
+                                    baselayout = self.generator_section.sub_layout, choices = self.aberrations[self.generator_section.combo.current_data],
+                                    on_change_function = self.aberration_changer_mapper[self.generator_section.combo.current_data])
+        self.reinitialize_simulator()
+
+    def change_vectorial_aberration(self):
+        self.aberration_section.remove_sub_layout_content()
         
+        if self.aberration_section.combo.text == 'None':
+            pass 
+        
+        elif self.aberration_section.combo.text == 'Interface':           
+            self.n1 = Setting(name='n1', dtype=float, initial=1.51, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator) 
+            self.axial_position = Setting(name='axial position', dtype=float, initial=0.0, unit = 'nm', 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+        
+        elif self.aberration_section.combo.text == 'Zernike':           
+            self.N = Setting(name='N', dtype=int, initial=3, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+            self.M = Setting(name='M', dtype=int, initial=1, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+            self.weight = Setting(name='weight', dtype=float, initial=0.6, unit = '\u03BB', 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+        self.reinitialize_simulator() 
+ 
+
+    def change_scalar_aberration(self):
+        self.aberration_section.remove_sub_layout_content()
+        
+        if self.aberration_section.combo.text == 'None':
+            pass 
+        
+        elif self.aberration_section.combo.text == 'Slab':           
+            self.n1 = Setting(name='n1', dtype=float, initial=1.51, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator) 
+            self.thickness = Setting(name='thickness', dtype=float, initial=100.0, unit = '\u03BCm', 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+            self.alpha = Setting(name='alpha', dtype=float, initial=0.0, unit = 'deg', 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+        
+        elif self.aberration_section.combo.text == 'Zernike':           
+            self.N = Setting(name='N', dtype=int, initial=3, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+            self.M = Setting(name='M', dtype=int, initial=1, 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+            self.weight = Setting(name='weight', dtype=float, initial=0.6, unit = '\u03BB', 
+                        layout = self.aberration_section.sub_layout,
+                        write_function = self.reinitialize_simulator)
+        self.reinitialize_simulator() 
+ 
+
     def create_base_Settings(self,settings_layout):
         """
         Adds the basic settings for psf-simulator with initial values
@@ -98,165 +213,85 @@ class Psf_widget(QWidget):
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.n = Setting(name='n', dtype=float, initial=1.33, 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.wavelength = Setting(name='wavelength', dtype=float, initial=0.532, unit = '\u03BCm', spinbox_decimals = 3, 
+        self.wavelength = Setting(name='wavelength', dtype=float, initial=0.532,
+                          unit = '\u03BCm', spinbox_decimals = 3, 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.Nxy = Setting(name='Nxy', dtype=int, initial=127, vmin=1, vmax = 4095,
+        self.fov_xy = Setting(name='FOV xy', dtype=float, initial=1.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.Nz = Setting(name='Nz', dtype=int, initial=63, vmin = 1, vmax = 4095,
+        self.fov_z = Setting(name='FOV z', dtype=float, initial=3.0, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dxy = Setting(name='dxy', dtype=float, initial=0.05, unit = '\u03BCm', 
+        self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dz = Setting(name='dz', dtype=float, initial=0.15, unit = '\u03BCm',
+        self.dz = Setting(name='dz', dtype=float, initial=0.5, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        
-        
-    def setup_aberration_ui(self):
-        '''
-        Creates the aberration combobox
-        '''
-        self.setup_aberrations()
-        self.add_section(self.layout,'Aberration')
-        self.aberration_combo = Combo_box(name = 'Aberration', choices = self.aberrations.enum(),
-                                layout = self.layout, write_function= self._on_aberration_change)
-        
-        
-    def setup_aberrations(self):
-        '''
-        Defines the available aberrations that will appear in the combobox.
-        To define your own aberration use self.aberration.add()
-        indicating the:
-            -name of the aberration
-            -phase_aberration_function: the function to be executed when the aberration is selected
-            -the Settings visible when the aberration is selected.
-             These will also be the parameters of the phase_aberration_function.
-             See the Aberrations and BaseAberration classes in napari_psf_simulator.aberrations
-             
-        '''
-        self.aberrations = Aberrations()
+        self.lens_aperture = Setting(name='lens radius', dtype=float, initial=3, unit='mm', 
+                            layout = settings_layout, write_function = self.reinitialize_simulator)
 
-        self.aberrations.add(name = 'SLAB_ABERRATION',
-                        phase_aberration_function = self.gen.add_slab_scalar,
-                        n1 = 1.51,
-                        thickness = 100.0, thickness_units = '\u03BCm', #um 
-                        alpha = 0.0,
-                        alpha_units = 'deg',
-                        )
-
-        self.aberrations.add(name = 'ZERNIKE_ABERRATION',
-                        phase_aberration_function = self.gen.add_Zernike_aberration,
-                        N=3, M=1, 
-                        weight=0.6, weight_units = '\u03BB', #lambda
-                        )
-
-        # add additional aberrations
-        # self.aberrations.add(name = 'MY aberrations',
-        #                phase_aberration_function = my_function,
-        #                setting0 = 0.0, setting0_units = 'mm',
-        #                setting1 = True)
+        
     
-    
-    def start_simulator(self):
+    def start_base_simulator(self):
+        """Starts the base simulator, using scalar propagation
         """
-        Starts the PSF generators and create the frequency space 
-        """
+        self._calculate_matrix_dimensions()
         self.gen = PSF_simulator(self.NA.val, self.n.val, self.wavelength.val,
-                                 self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
+                            self.Nxy_scalar , self.Nz_scalar, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
     
-    
+
     def reinitialize_simulator(self):
         '''
-        Starts the simulator defining the space in the spatial frequency domain.
-        Creates the systems' pupil (self.gen.amplitude and self.gen.phase).
+        Starts the simulator, accorgin to choice made on the combo box,
         Sets the current aberration type.
         '''
+        selected_generator = self.generator_section.combo.current_data
+        self._calculate_matrix_dimensions()
         
-        self.gen.re_init(self.NA.val, self.n.val, self.wavelength.val,
-                        self.Nxy.val , self.Nz.val, dr = self.dxy.val, dz = self.dz.val)
-        if not hasattr(self, 'selected_aberration'):
-            selection = self.aberration_combo.current_data
-            self.selected_aberration  = self.aberrations.get_by_idx(selection)
-        self.add_aberration(self.selected_aberration)
-        
+        if selected_generator is PyFocusSimulator:
+            self.gen = selected_generator(NA=self.NA.val, n=self.n.val, wavelength=self.wavelength.val, lens_aperture=self.lens_aperture.val,
+                                Nxy=self.Nxy_show , Nz=self.Nz_show, dr=self.dxy.val, dz=self.dz.val,
+                                gamma = self.gamma, beta = self.beta, incident_amplitude = self.custom_amplitude, 
+                                incident_phase = self.custom_phase)
+            self.settings_handler.set_incident_energy_ratio()
+            self.add_vectorial_aberration()
+        elif selected_generator is PSF_simulator:
+            self.gen = selected_generator(self.NA.val, self.n.val, self.wavelength.val,
+                                self.Nxy_scalar , self.Nz_scalar, dr = self.dxy.val, dz = self.dz.val, crop_Ns = (self.Nxy_show, self.Nz_show))
+            self.add_scalar_aberration() 
     
-    def add_aberration(self, selected_aberration):
+    def _calculate_matrix_dimensions(self):
+        """Calculates the dimmensions of the field to show. For scalar approximation, this is usefull since the calculation is done internally with a bigger number of divisions
+        Note: This pass should be performed by the psf_generator, but I was unable to perform it there since the field returned was null for certain values of Nxy and Nz and the cause was not found
+        """
+        self.Nxy_show = int(self.fov_xy.val//self.dxy.val)
+        self.Nz_show = int(self.fov_z.val//self.dz.val)
+        # The number of points must be odd so that the center pixel corresponds the the (0,0,0) coordinates
+        if self.Nxy_show % 2 == 0: self.Nxy_show += 1
+        if self.Nz_show % 2 == 0: self.Nz_show += 1
+        # We make the fov to show not to be greater than the one we calculate
+        if self.Nxy_show >= self.Nxy_scalar: self.Nxy_scalar = self.Nxy_show
+        if self.Nz_show >= self.Nz_scalar: self.Nz_scalar = self.Nz_show
+
+    def add_vectorial_aberration(self):
         '''
-        Adds a phase aberration to the pupil (adding a phase term to self.gen.phase)
+        Adds the effect of a phase aberration
         '''  
-        params = selected_aberration.settings
-        function = selected_aberration.phase_aberration_function
-        function(**params)
-    
-    def _on_aberration_change(self, current_data):
-        if hasattr(self, 'aberration_layout'):
-            self.remove_layout(self.aberration_layout)     
-        selection = self.aberration_combo.current_data
-        self.selected_aberration  = self.aberrations.get_by_idx(selection)
-        aberration_layout = QVBoxLayout()
-        self.aberration_layout = aberration_layout
-        self.layout.addLayout(aberration_layout)
-        self.create_aberration_Settings(self.selected_aberration.settings,
-                                        self.selected_aberration.units,                                                                        
-                                        aberration_layout,
-                                        self._on_aberration_setting_change) 
-        self.reinitialize_simulator()
-        
-        
-    def _on_aberration_setting_change(self, *args):
-        for key, val in self.selected_aberration.settings.items():
-            self.selected_aberration.settings[key] = getattr(self,key).val
-        self.reinitialize_simulator()
+        if self.aberration_section.combo.text == 'None':
+            pass
+        elif self.aberration_section.combo.text == 'Interface':
+            self.gen.add_interface(self.n1.val, self.axial_position.val)
+        elif self.aberration_section.combo.text == 'Zernike':
+            self.gen.add_Zernike_aberration(self.N.val, self.M.val, self.weight.val)  
 
-    
+    def add_scalar_aberration(self):
+        '''
+        Adds the effect of a phase aberration
+        '''  
+        if self.aberration_section.combo.text == 'None':
+            pass
+        elif self.aberration_section.combo.text == 'Slab':
+            self.gen.add_slab_scalar(self.n1.val, self.thickness.val, self.alpha.val)
+        elif self.aberration_section.combo.text == 'Zernike':
+            self.gen.add_Zernike_aberration(self.N.val, self.M.val, self.weight.val)  
 
-    def create_aberration_Settings(self,  settings_dict, units_dict, layout, write_function):
-        """
-        Adds the settings whose name and value is specified in a dictionary,
-        to the passed layout
-
-        Parameters
-        ----------
-        settings_dict : dict
-            Dictonary containing the settings name and initial value that will be displayed
-        units_dict : dict
-            Dictonary containing the units of measurement (if available) for the settings 
-        layout : Qlayout
-            Layout where the settings will be created
-        write_function: function or method
-            to be executed when the value of one the aberrations settings is changed
-
-        """
-        def find_decimals_num(s):
-            return len(str(s).split(".")[1])
-            
-        for key, val in settings_dict.items():
-            name = key 
-            unit = ''
-            for ukey, uval in units_dict.items():  
-                if key in ukey:
-                    unit = uval
-            decimals = find_decimals_num(val) if type(val)==float else 0
-            new_setting = Setting(name=name, dtype=type(val), initial=val, 
-                                  spinbox_decimals=decimals, spinbox_step= 0.1,
-                                  unit = unit,
-                                  layout=layout,
-                                  write_function=write_function)
-            setattr(self, name, new_setting)    
-
-    
-    def remove_layout(self,_layout):
-        def delete_items(layout):
-            if layout is not None:
-                while layout.count():
-                    item = layout.takeAt(0)
-                    widget = item.widget()
-                    if widget is not None:
-                        widget.setParent(None)
-                    else:
-                        delete_items(item.layout())
-        delete_items(_layout)
-        self.layout.removeItem(_layout)
-        delattr(self, 'aberration_layout')
-        
     
     def rescaleZ(self, layer):
         """
@@ -268,6 +303,19 @@ class Psf_widget(QWidget):
             scale[-3] = zscaling
             layer.scale = scale
             
+    def update_incident_energy_ratio(self):
+        if self.generator_section.combo.current_data is PyFocusSimulator:
+            try:
+                if self.set_incident_energy_ratio_to_one.checkState():
+                    self.gen.use_energy_ratio = False # Variable to allow the user to compensate for the inciding energy factor
+                else:
+                    self.gen.use_energy_ratio = True
+            except Exception as e:
+                print(format_exc())
+                print("No se pudo")
+                pass
+        else:
+            pass
     
     def calculate_psf(self):
         '''
@@ -278,6 +326,7 @@ class Psf_widget(QWidget):
             import warnings
             warnings.filterwarnings('ignore')
             self.gen.generate_pupil()
+            self.update_incident_energy_ratio()
             self.gen.generate_3D_PSF()
             return self.gen.PSF3D
         
@@ -285,22 +334,35 @@ class Psf_widget(QWidget):
             #self.viewer.dims.current_step = (0,0,0)
             
             psf_layer = self.viewer.add_image(psf,
-                             name=self.gen.write_name(basename = 'stack'),
+                             name=self.gen.write_name(basename = 'I'),
                              colormap='twilight')
             self.rescaleZ(psf_layer)
             
+            if self.generator_section.combo.current_data == PyFocusSimulator and self.pyFocus_component_checkbox.checkState():
+                x_layer = self.viewer.add_image(np.abs(self.gen.field.Ex)**2,
+                                name=self.gen.write_name(basename = 'Ix'),
+                                colormap='gray')
+                self.rescaleZ(x_layer)
+                y_layer = self.viewer.add_image(np.abs(self.gen.field.Ey)**2,
+                                name=self.gen.write_name(basename = 'Iy'),
+                                colormap='gray')
+                self.rescaleZ(y_layer)
+                z_layer = self.viewer.add_image(np.abs(self.gen.field.Ez)**2,
+                                name=self.gen.write_name(basename = 'Iz'),
+                                colormap='gray')
+                self.rescaleZ(z_layer)
+            
             if self.airy_checkbox.checkState():
-               self.show_airy_disk()
-                
+                self.show_airy_disk()
             
             if self.plot_checkbox.checkState():
                 self.gen.plot_psf_profile()
-                
-            posxy = self.Nxy.val // 2
-            posz = self.Nz.val // 2
+            
+            posxy = self.Nxy_show // 2
+            posz = self.Nz_show // 2
             self.viewer.dims.set_point(axis=[0,1,2], value=(0,0,0)) #raises ValueError in napari versions <0.4.13
             self.viewer.dims.current_step = (posz,posxy,posxy) # shows the image center of the stack in 3D
-            
+            self.viewer.dims.axis_labels = ["z", "y","x"]
             
         worker = generator()  # create "worker" object
         worker.returned.connect(update_image)  # connect callback functions
@@ -316,8 +378,8 @@ class Psf_widget(QWidget):
        #print(deltaZ)
        #print('paraxial:', 2*self.n.val* self.wavelength.val/ self.NA.val**2)
        
-       posxy = self.Nxy.val//2
-       posz = self.Nz.val//2
+       posxy = self.Nxy_show.val//2
+       posz = self.Nz_show.val//2
        center = np.array([posz,posxy,posxy])
        deltar = deltaR/self.dxy.val
        deltaz = deltaZ/self.dz.val
@@ -338,7 +400,7 @@ class Psf_widget(QWidget):
                            center+np.array([-deltaz, 0, deltar])]
                           )
        
-       if (self.dz.val*self.Nz.val)/2 > deltaZ:
+       if (self.dz.val*self.Nz_show.val)/2 > deltaZ:
            ellipses = [bbox_yx, bbox_zy, bbox_zx]
        else:
            ellipses = [bbox_yx]

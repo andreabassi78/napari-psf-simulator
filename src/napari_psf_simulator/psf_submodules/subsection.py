@@ -6,12 +6,12 @@ Created on Fri May 27 23:31:57 2022
 """
 from enum  import Enum 
     
-class BaseAberration:
+class BaseSubSection:
     '''
-    Base aberration class
+    Base Subsection class
     '''
-    def __init__(self, name='MY_ABERRATION',
-                       phase_aberration_function = None,
+    def __init__(self, name='MY_SUBSECTION',
+                       subsection_function = None,
                        **kwargs):
         '''
         Parameters
@@ -19,21 +19,21 @@ class BaseAberration:
         name : str
             name of the aberration, it will also appean in the Combo_box
             showing the available aberrations in napari_psf_simulator._widget
-        phase_aberration_function : function
-            function/method to add a phase to the pupil 
+        subsection_function : function
+            function/method to be used when section is active 
         **kwargs : int or float or bool or str
-            these are the Settings that will be created in the aberration layout of napari_psf_simulator._widget
-            and the parameters passed to the phase_Aberration_function
+            these are the Settings that will be created in the subsection layout of napari_psf_simulator._widget
+            and the parameters passed to the subsection fucntion
 
         '''
         def _pass(*args,**kwargs):
             pass
         
         self.name = name
-        if phase_aberration_function == None:
-            self.phase_aberration_function = _pass
+        if subsection_function == None:
+            self.subsection_function = _pass
         else: 
-            self.phase_aberration_function = phase_aberration_function
+            self.subsection_function = subsection_function
         
         self.settings,self.units = self.define_settings(kwargs)
         
@@ -52,10 +52,10 @@ class BaseAberration:
         settings = {key:val for (key,val) in settings_with_units.items() if '_units' not in key}
         return settings, units
    
-class Aberrations():
+class SubSection():
     """
-    Class that contains multiple Base_aberrations, as attributes
-    __num is a class attribute indicating the total number of aberrations 
+    Class that contains multiple Base_Subsection, as attributes
+    __num is a class attribute indicating the total number of available option in the section conmbo box 
     and it is used to index the aberrations.
     """
     __num = 0
@@ -64,18 +64,18 @@ class Aberrations():
         
         self.add('None')
     
-    def add(self, name='MY_ABERRATION',
-                       phase_aberration_function = None,
+    def add(self, name='MY_SECTION',
+                       subsection_function = None,
                        **kwargs):
         '''
         adds a new Baseaberration to the object  with the specified 
         name, phase_aberration_function and settings/units in kwargs
         '''
-        self._add(BaseAberration(name, phase_aberration_function, **kwargs))
+        self._add(BaseSubSection(name, subsection_function, **kwargs))
         
-    def _add(self, aberration:BaseAberration):
-        setattr(self, aberration.name, aberration) 
-        aberration._index = self.__num 
+    def _add(self, subsection:BaseSubSection):
+        setattr(self, subsection.name, subsection) 
+        subsection._index = self.__num 
         self.__num +=1
     
     def enum(self):
@@ -83,19 +83,19 @@ class Aberrations():
         attrs = {}
         for name in vars(self):
             attr = getattr(self, name)
-            if type(attr) is BaseAberration:
+            if type(attr) is BaseSubSection:
                 attrs[getattr(attr,'name')] = getattr(attr,'_index')   
         return Enum('Abber', attrs)
      
     def get_by_name(self,name):
-        ''' Returns the Baseaberration by name '''
-        aberration = getattr(self, name)
-        return aberration 
+        ''' Returns the BaseSubSection by name '''
+        subsection = getattr(self, name)
+        return subsection 
     
     def get_by_idx(self,idx):
-        ''' Returns the Baseaberration by index '''
+        ''' Returns the BaseSubSection by index '''
         enum = self.enum()
         name = enum(idx).name
-        aberration = getattr(self, name)
-        return aberration 
+        subsection = getattr(self, name)
+        return subsection 
         

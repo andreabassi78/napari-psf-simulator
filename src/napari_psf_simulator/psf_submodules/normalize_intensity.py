@@ -38,12 +38,11 @@ def calculate_normalizing_factor(intensity_at_the_focus, x_max: float, y_max: fl
         float: Factor by wich to multiply the intensity to normalize it
     """
     E_inc = np.pi*(lens_aperture**2) # Energy inciding at the focal lens (equalt to the integral over a circle of radius "lens_aperture")
-    print(f"{E_inc=}")
+    E_inc/=10**12 # Unit transformation from mm^2 to nm^2
     Nz, Nx, Ny = np.shape(intensity_at_the_focus) # Number of division for each coordinate
 
     weight_trapezoid = calculate_2D_trapezoidal_method_weight(2*x_max, 2*y_max, Nx, Ny) # We multiply by 2 since the field is calculated from -x_max yo +x_max
     E_focus = np.abs(np.sum(intensity_at_the_focus*weight_trapezoid))
-    print(f"{E_focus=}")
     
     return E_inc/E_focus
 

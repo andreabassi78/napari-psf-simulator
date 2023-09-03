@@ -316,7 +316,7 @@ class Psf_widget(QWidget):
                 print("No se pudo")
                 pass
         else:
-            print("No")
+            pass
     
     def calculate_psf(self):
         '''

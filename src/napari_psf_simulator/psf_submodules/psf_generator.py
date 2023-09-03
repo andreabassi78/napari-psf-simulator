@@ -340,7 +340,6 @@ class PSF_simulator():
         
     def normalize_psf(self):
         normalizing_factor = calculate_normalizing_factor(self.PSF3D, max(self.x), max(self.x), self.lens_aperture*1000000)
-        print(f"{normalizing_factor=}")
         self.PSF3D*=normalizing_factor
         
     def crop_psf(self):

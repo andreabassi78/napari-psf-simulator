@@ -2,10 +2,20 @@ name: napari-psf-simulator
 display_name: PSF simulator
 contributions:
   commands: 
-    - id: napari-psf-simulator.make_qwidget
+    - id: napari-psf-simulator.make_widget
       python_name: napari_psf_simulator._widget:Psf_widget
-      title: Polimi PSF simulator widget
-     
+      title: PSF simulator
+    - id: napari-psf-simulator.make_calculator_widget
+      python_name: napari_psf_simulator._calculator_widget:calculate
+      title: PSF combiner
+    - id: napari-psf-simulator.make_contrast_widget
+      python_name: napari_psf_simulator._contrast_widget:set_contrast
+      title: Contrast setter
+   
   widgets:
-    - command: napari-psf-simulator.make_qwidget
+    - command: napari-psf-simulator.make_widget
       display_name: PSF simulator widget
+    - command: napari-psf-simulator.make_calculator_widget
+      display_name: PSF combiner widget
+    - command: napari-psf-simulator.make_contrast_widget
+      display_name: Contrast setter widget

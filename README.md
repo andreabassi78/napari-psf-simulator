@@ -9,10 +9,10 @@
 
 A plugin for the simulation of the 3D Point Spread Function of an optical systen, particularly a microscope objective.
  
-Calculates the PSF as the squared Fourier Transform of the pupil and uses the angular spectrum to propagate the PSF in 3D.  
+Calculates the PSF using scalar and vectorial models.  
 The following aberrations are included:
-- phase aberration described by a Zernike polynomials with n-m coefficients
-- aberration induced by a slab, with a refractive index different from the one at the object (only scalar approximation is used, polarization not considered yet).  
+- phase aberration described by a Zernike polynomials with n-m coefficients.
+- aberration induced by a slab, with a refractive index different from the one at the object.  
 
 ----------------------------------
 
@@ -41,9 +41,13 @@ To install latest development version :
 ## Usage
 
 1) Lauch the plugin and select the parameters of the microscope: `NA` (numerical aperture), `wavelenght`, `n` (refractive index at the object),
-   `Nxy` (number of pixels), `Nz` (number of slices), `dxy` (pixel size, transverse sampling), `dz` (voxel depth, axial sampling)
+   `FOV xy` (field of view in the transverse direction), `FOV z` (field of view in the axial direction), `dxy` (pixel size, transverse sampling), `dz` (voxel depth, axial sampling), `lens radius` (physical aperture of the lens, used in vectorial model)
 
-2) Select an aberration type (if needed) and press `Calculate PSF` to run the simulator. This will create a new image layer with the 3D PSF.
+2) Select a propagation model between `scalar` and `vectorial`.  
+
+3) Select an aberration type (if needed).
+
+4) Press `Calculate PSF` to run the simulator. This will create a new image layer with the 3D PSF.
  
    The option `Show Airy disk` creates 3 ellipses in a Shapes layer, showing the boundaries of the diffraction limited blob.
 

@@ -22,7 +22,8 @@ from qtpy.QtGui import QColor
 from .psf_submodules.gui_utils import Setting, SwitchableSection
 from .psf_submodules.psf_generator import PSF_simulator
 from .auxiliary_handlers.PyFocus_auxiliary_handler import PyFocusSettingsHandler
-from PyFocus.napari_adapter.napari_adapter import PyFocusSimulator
+from .PyFocus.src.PyFocus.napari_adapter.napari_adapter import PyFocusSimulator
+
 
 class Psf_widget(QWidget):
     '''

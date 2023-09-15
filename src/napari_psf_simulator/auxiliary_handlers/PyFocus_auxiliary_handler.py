@@ -73,9 +73,9 @@ class PyFocusSettingsHandler:
             pass
     
     def _add_polarization_settings(self, initial_gamma, initial_beta, read_only):
-            self.widget.gamma_setting = Setting(name='gamma', dtype=float, initial=initial_gamma, unit='deg', 
+            self.widget.gamma_setting = Setting(name='gamma', dtype=float, initial=initial_gamma, vmin = -180, vmax= 180, unit='deg', 
                             layout = self.widget.polarization_section.sub_layout, write_function = self.set_polarization, read_only=read_only)
-            self.widget.beta_setting = Setting(name='beta', dtype=float, initial=initial_beta, unit='deg',
+            self.widget.beta_setting = Setting(name='beta', dtype=float, initial=initial_beta, vmin = -180, vmax= 180, unit='deg',
                             layout = self.widget.polarization_section.sub_layout, write_function = self.set_polarization, read_only=read_only)
 
     def set_polarization(self):

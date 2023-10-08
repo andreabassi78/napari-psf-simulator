@@ -158,13 +158,14 @@ class Psf_widget(QWidget):
                         write_function = self.reinitialize_simulator)
         
         elif self.aberration_section.combo.text == 'Zernike':           
-            self.N = Setting(name='N', dtype=int, initial=3, 
+            self.N = Setting(name='N', dtype=int, initial=3, vmin = -(2**16-1), 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
-            self.M = Setting(name='M', dtype=int, initial=1, 
+            self.M = Setting(name='M', dtype=int, initial=1, vmin = -(2**16-1), 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
-            self.weight = Setting(name='weight', dtype=float, initial=0.6, unit = '\u03BB', 
+            self.weight = Setting(name='weight', dtype=float, vmin = -(2**16-1)
+                                  , initial=0.6, unit = '\u03BB', 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
         self.reinitialize_simulator() 
@@ -188,14 +189,14 @@ class Psf_widget(QWidget):
                         write_function = self.reinitialize_simulator)
         
         elif self.aberration_section.combo.text == 'Zernike':           
-            self.N = Setting(name='N', dtype=int, initial=3, 
+            self.N = Setting(name='N', dtype=int, initial=3, vmin = -(2**16-1), 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
-            self.M = Setting(name='M', dtype=int, initial=1, 
+            self.M = Setting(name='M', dtype=int, initial=1, vmin = -(2**16-1), 
                         layout = self.aberration_section.sub_layout,
                         write_function = self.reinitialize_simulator)
             self.weight = Setting(name='weight', dtype=float, initial=0.6, unit = '\u03BB', 
-                        layout = self.aberration_section.sub_layout,
+                        layout = self.aberration_section.sub_layout, vmin = -(2**16-1),
                         write_function = self.reinitialize_simulator)
         self.reinitialize_simulator() 
  
@@ -217,13 +218,13 @@ class Psf_widget(QWidget):
         self.wavelength = Setting(name='wavelength', dtype=float, initial=0.532,
                           unit = '\u03BCm', spinbox_decimals = 3, 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.fov_xy = Setting(name='FOV xy', dtype=float, initial=1.5, unit = '\u03BCm',
+        self.fov_xy = Setting(name='FOV xy', dtype=float, initial=1.5, spinbox_decimals=3, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.fov_z = Setting(name='FOV z', dtype=float, initial=3.0, unit = '\u03BCm',
+        self.fov_z = Setting(name='FOV z', dtype=float, initial=3.0, spinbox_decimals=3, unit = '\u03BCm',
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', 
+        self.dxy = Setting(name='dxy', dtype=float, initial=0.03, unit = '\u03BCm', spinbox_decimals=3, 
                           layout = settings_layout, write_function = self.reinitialize_simulator)
-        self.dz = Setting(name='dz', dtype=float, initial=0.5, unit = '\u03BCm',
+        self.dz = Setting(name='dz', dtype=float, initial=0.5, unit = '\u03BCm', spinbox_decimals=3,
                           layout = settings_layout, write_function = self.reinitialize_simulator)
         self.lens_aperture = Setting(name='lens radius', dtype=float, initial=3, unit='mm', 
                             layout = settings_layout, write_function = self.reinitialize_simulator)
@@ -379,8 +380,8 @@ class Psf_widget(QWidget):
        #print(deltaZ)
        #print('paraxial:', 2*self.n.val* self.wavelength.val/ self.NA.val**2)
        
-       posxy = self.Nxy_show.val//2
-       posz = self.Nz_show.val//2
+       posxy = self.Nxy_show//2
+       posz = self.Nz_show//2
        center = np.array([posz,posxy,posxy])
        deltar = deltaR/self.dxy.val
        deltaz = deltaZ/self.dz.val
@@ -401,7 +402,7 @@ class Psf_widget(QWidget):
                            center+np.array([-deltaz, 0, deltar])]
                           )
        
-       if (self.dz.val*self.Nz_show.val)/2 > deltaZ:
+       if (self.dz.val*self.Nz_show)/2 > deltaZ:
            ellipses = [bbox_yx, bbox_zy, bbox_zx]
        else:
            ellipses = [bbox_yx]

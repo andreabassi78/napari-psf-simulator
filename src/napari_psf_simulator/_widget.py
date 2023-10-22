@@ -327,6 +327,7 @@ class Psf_widget(QWidget):
         def generator():
             import warnings
             warnings.filterwarnings('ignore')
+            self.reinitialize_simulator()
             self.gen.generate_pupil()
             self.update_incident_energy_ratio()
             self.gen.generate_3D_PSF()

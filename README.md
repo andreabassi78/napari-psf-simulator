@@ -65,9 +65,9 @@ To install latest development version :
 
 ## Detailed documentation
 
-An exhaustive documentation of the use of the plugin on scalar and vectoral propagation models can be found at [this presentation](\docs\napari_psf_simullator_presentation.pdf)
+An exhaustive documentation of the use of the plugin on scalar and vectoral propagation models can be found at [this presentation](/docs/napari_psf_simullator_presentation.pdf)
 
-A detailed explanation of the uses and advantages that simulating a PSF brings can be found in [this presentation](\docs\pyfocus_seminar.ppt)
+A detailed explanation of the uses and advantages that simulating a PSF brings can be found in [this presentation](/docs/pyfocus_seminar.ppt)
 
 The vectorial propagation model implements a secondary library: [pyfocus](https://github.com/fcaprile/PyFocus). The full documentation of this library can be found at [read the docs](https://pyfocus.readthedocs.io/en/latest/) and in the paper: "PyFocus: A Python package for vectorial calculations of focused optical fields under realistic conditions. Application to toroidal foci." https://doi.org/10.1016/j.cpc.2022.108315
 

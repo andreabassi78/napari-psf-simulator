@@ -105,7 +105,6 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [pip]: https://pypi.org/project/pip/
 [PyPI]: https://pypi.org/
 
-[this]:
-https://github.com/andreabassi78/napari-psf-simulator/raw/main/docs/napari_psf_simullator_presentation.pdf
+[this]: https://github.com/andreabassi78/napari-psf-simulator/raw/main/docs/napari_psf_simullator_presentation.pdf
 
-[here]:https://github.com/andreabassi78/napari-psf-simulator/raw/main/docs/pyfocus_seminar.pptx
+[here]: https://github.com/andreabassi78/napari-psf-simulator/raw/main/docs/pyfocus_seminar.pptx
